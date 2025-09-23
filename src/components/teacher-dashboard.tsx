@@ -14,18 +14,15 @@ import {
   Copy,
   Search,
   Filter,
-  PanelLeftOpen,
-  PanelRightOpen,
-  PanelLeftClose,
-  PanelRightClose,
   FolderKanban,
+  Menu,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { onStudentsUpdate, getProjectsForStudent } from '@/lib/data';
 import type { UserProfile, Project } from '@/lib/types';
 import { GOAL_HOURS } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -41,47 +38,9 @@ import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import StudentsList from './students-list';
 
-
-function HourvestLogo({ collapsed }: { collapsed: boolean }) {
-  return (
-    <div className={`flex items-center gap-2 ${collapsed ? 'justify-center' : 'px-4'}`}>
-      <div
-        className={`bg-primary rounded-lg transition-all duration-300 ${collapsed ? 'w-10 h-10' : 'w-10 h-10'}`}
-        >
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className={`text-primary-foreground m-2 transition-all duration-300 ${collapsed ? 'w-6 h-6' : 'w-6 h-6'}`}
-        >
-        <path
-            d="M12 2L19.5 6L12 10L4.5 6L12 2Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-        <path
-            d="M4.5 18L12 22L19.5 18"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-        <path
-            d="M4.5 12L12 16L19.5 12"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-        </svg>
-    </div>
-      <h1 className={`text-xl font-bold origin-left transition-all duration-200 ${collapsed ? 'scale-x-0 w-0' : 'scale-x-100'}`}>HOURVEST</h1>
-    </div>
-  );
-}
 
 function InviteButton({
   teacherId,
@@ -126,17 +85,60 @@ function InviteButton({
 
 type Activity = Project & { studentName: string };
 
+function LeftSidebarNav() {
+    const router = useRouter();
+    const handleSignOut = async () => {
+        await auth.signOut();
+        router.push('/login');
+    };
+
+    return (
+        <div className="flex h-full max-h-screen flex-col gap-2">
+            <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+                <Link href="/" className="flex items-center gap-2 font-semibold">
+                    <div className="bg-primary text-primary-foreground rounded-lg p-2">
+                        <Users className="h-5 w-5" />
+                    </div>
+                    <span className="">HourVest</span>
+                </Link>
+            </div>
+            <div className="flex-1">
+                <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+                    <Link href="#" className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary">
+                        <Home className="h-4 w-4" />
+                        Inicio
+                    </Link>
+                    <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
+                        <FolderKanban className="h-4 w-4" />
+                        Proyectos
+                    </Link>
+                    <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
+                        <Users className="h-4 w-4" />
+                        Alumnos
+                    </Link>
+                    <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
+                        <Building className="h-4 w-4" />
+                        Colegio
+                    </Link>
+                </nav>
+            </div>
+            <div className="mt-auto p-4">
+                <Button size="sm" variant="ghost" className="w-full justify-start text-muted-foreground" onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Cerrar Sesión
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 export default function TeacherDashboard() {
   const { userProfile } = useAuth();
-  const router = useRouter();
   const [students, setStudents] = useState<
     (UserProfile & { totalHours: number })[]
   >([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
   useEffect(() => {
     if (userProfile && userProfile.role === 'Profesor') {
@@ -209,291 +211,140 @@ export default function TeacherDashboard() {
     };
   }, [students]);
 
-  const handleSignOut = async () => {
-    await auth.signOut();
-    router.push('/login');
-  };
-
-  const NavLink = ({ href, icon, label, collapsed }: { href: string, icon: React.ReactNode, label: string, collapsed: boolean }) => {
-    const content = (
-        <Link
-            href={href}
-            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all ${collapsed ? 'justify-center' : ''} text-muted-foreground hover:bg-muted hover:text-foreground`}
-        >
-            {icon}
-            <span className={`origin-left transition-all duration-200 ${collapsed ? 'w-0 scale-x-0' : 'w-auto scale-x-100'}`}>{label}</span>
-        </Link>
-    );
-
-    if (collapsed) {
-        return (
-            <TooltipProvider>
-                <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>{content}</TooltipTrigger>
-                    <TooltipContent side="right">
-                        <p>{label}</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        );
-    }
-
-    return content;
-};
-
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      {/* Left Sidebar */}
-      <aside
-        className={`bg-card text-card-foreground border-r transition-all duration-300 flex flex-col ${
-          isLeftSidebarOpen ? 'w-64' : 'w-20'
-        }`}
-      >
-        <div className="flex h-16 items-center border-b shrink-0">
-          <HourvestLogo collapsed={!isLeftSidebarOpen} />
-        </div>
-        <nav className="flex-1 space-y-2 p-4">
-            <NavLink href="#" icon={<Home />} label="Inicio" collapsed={!isLeftSidebarOpen} />
-            <NavLink href="#" icon={<Users />} label="Mis Alumnos" collapsed={!isLeftSidebarOpen} />
-            <NavLink href="#" icon={<FolderKanban />} label="Proyectos" collapsed={!isLeftSidebarOpen} />
-            <NavLink href="#" icon={<Building />} label="Colegio" collapsed={!isLeftSidebarOpen} />
-        </nav>
-        <div className="mt-auto space-y-2 p-4 border-t">
-            <NavLink href="#" icon={<Settings />} label="Settings" collapsed={!isLeftSidebarOpen} />
-            <button
-                onClick={handleSignOut}
-                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all text-red-500 hover:bg-red-500/10 ${!isLeftSidebarOpen ? 'justify-center' : ''}`}
-            >
-                <LogOut />
-                <span className={`origin-left transition-all duration-200 ${!isLeftSidebarOpen ? 'w-0 scale-x-0' : 'w-auto scale-x-100'}`}>Logout</span>
-            </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex flex-col flex-1">
-        <header className="flex items-center h-16 justify-between border-b bg-card px-8 shrink-0">
-          <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}>
-                {isLeftSidebarOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-muted/40 md:block">
+        <LeftSidebarNav />
+      </div>
+      <div className="flex flex-col">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
               </Button>
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input placeholder="Buscar a un alumno..." className="pl-10" />
-            </div>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col">
+              <LeftSidebarNav />
+            </SheetContent>
+          </Sheet>
+          <div className="w-full flex-1">
+            <form>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Buscar alumnos..."
+                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+                />
+              </div>
+            </form>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon">
-              <Filter className="h-5 w-5" />
-            </Button>
-            <button onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}>
-                <Avatar className="h-10 w-10 cursor-pointer">
-                    <AvatarImage
-                        src={
-                        userProfile
-                            ? `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile.name}`
-                            : ''
-                        }
-                    />
-                    <AvatarFallback>{userProfile?.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-            </button>
-          </div>
+          <Avatar className="h-9 w-9">
+              <AvatarImage src={userProfile ? `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile.name}`: ''} />
+              <AvatarFallback>{userProfile?.name.charAt(0)}</AvatarFallback>
+          </Avatar>
         </header>
-        
-        <main className="flex-1 p-8 overflow-auto">
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                    Total de Alumnos
-                </CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">
-                    {loading ? '...' : stats.totalStudents}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                    Alumnos vinculados a tu cuenta
-                </p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                    Progreso Medio
-                </CardTitle>
-                <BarChart2 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">
-                    {loading ? '...' : `${stats.averageProgress.toFixed(0)}%`}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                    del total de horas CAS completado
-                </p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                    Alumnos Completados
-                </CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">
-                    {loading ? '...' : stats.studentsCompleted}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                    han alcanzado la meta de horas
-                </p>
-                </CardContent>
-            </Card>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl">Inicio</h1>
+                {userProfile && (
+                    <div className="md:hidden">
+                         <InviteButton teacherId={userProfile.id} schoolName={userProfile.school} />
+                    </div>
+                )}
             </div>
 
-            <div>
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">
-                Actividades Publicadas Recientemente
-                </h2>
-                <Link
-                href="#"
-                className="text-sm font-medium text-primary hover:underline"
-                >
-                Ver todo
-                </Link>
+            <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Total de Alumnos</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{loading ? "..." : stats.totalStudents}</div>
+                  <p className="text-xs text-muted-foreground">Alumnos vinculados a tu cuenta</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Progreso Medio</CardTitle>
+                  <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{loading ? "..." : `${stats.averageProgress.toFixed(0)}%`}</div>
+                  <p className="text-xs text-muted-foreground">del total de horas CAS completado</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Alumnos Completados</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{loading ? "..." : stats.studentsCompleted}</div>
+                  <p className="text-xs text-muted-foreground">han alcanzado la meta de horas</p>
+                </CardContent>
+              </Card>
             </div>
-            <Card>
-                <Table>
-                <TableHeader>
-                    <TableRow>
-                    <TableHead>NOMBRE DEL ALUMNO</TableHead>
-                    <TableHead>NOMBRE DE LA ACTIVIDAD</TableHead>
-                    <TableHead>TIPO DE ACT.</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {loading ? (
-                    <TableRow>
-                        <TableCell colSpan={3} className="h-24 text-center">
-                        Cargando actividades...
-                        </TableCell>
-                    </TableRow>
-                    ) : activities.length === 0 ? (
-                    <TableRow>
-                        <TableCell colSpan={3} className="h-24 text-center">
-                        Por ahora, aquí no hay nada :(
-                        </TableCell>
-                    </TableRow>
-                    ) : (
-                    activities.map((activity) => (
-                        <TableRow key={activity.id}>
-                        <TableCell>
-                            <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                                <AvatarImage
-                                src={`https://api.dicebear.com/7.x/initials/svg?seed=${activity.studentName}`}
-                                />
-                                <AvatarFallback>
-                                {activity.studentName.charAt(0)}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <div className="font-medium">
-                                {activity.studentName}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                    {activity.startDate ? new Date(activity.startDate).toLocaleDateString() : ''}
-                                </div>
-                            </div>
-                            </div>
-                        </TableCell>
-                        <TableCell>{activity.name}</TableCell>
-                        <TableCell>
-                            <Badge variant="outline" className={`capitalize ${activity.category === 'Creatividad' ? 'border-blue-500 text-blue-500' : activity.category === 'Actividad' ? 'border-green-500 text-green-500' : 'border-orange-500 text-orange-500'}`}>
-                                {activity.category}
-                            </Badge>
-                        </TableCell>
-                        </TableRow>
-                    ))
+            
+            <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="xl:col-span-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Actividades Publicadas Recientemente</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                <TableRow>
+                                    <TableHead>Alumno</TableHead>
+                                    <TableHead>Actividad</TableHead>
+                                    <TableHead className="text-right">Categoría</TableHead>
+                                </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                {loading ? (
+                                    <TableRow><TableCell colSpan={3} className="text-center">Cargando...</TableCell></TableRow>
+                                ) : activities.length > 0 ? (
+                                    activities.map(activity => (
+                                    <TableRow key={activity.id}>
+                                        <TableCell>
+                                        <div className="font-medium">{activity.studentName}</div>
+                                        <div className="hidden text-sm text-muted-foreground md:inline">
+                                            {activity.startDate ? new Date(activity.startDate).toLocaleDateString() : ''}
+                                        </div>
+                                        </TableCell>
+                                        <TableCell>{activity.name}</TableCell>
+                                        <TableCell className="text-right capitalize">{activity.category}</TableCell>
+                                    </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow><TableCell colSpan={3} className="text-center">Por ahora, aquí no hay nada :(</TableCell></TableRow>
+                                )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="hidden xl:block">
+                     <StudentsList userProfile={userProfile} students={students} loading={loading} />
+                     {userProfile && (
+                        <div className="mt-4">
+                           <InviteButton teacherId={userProfile.id} schoolName={userProfile.school} />
+                        </div>
                     )}
-                </TableBody>
-                </Table>
-            </Card>
+                </div>
             </div>
+
+            <div className="block xl:hidden">
+                <StudentsList userProfile={userProfile} students={students} loading={loading} />
+            </div>
+
         </main>
       </div>
-
-      {/* Right Sidebar */}
-      <aside
-        className={`bg-card text-card-foreground border-l transition-all duration-300 ${
-          isRightSidebarOpen ? 'w-80' : 'w-0'
-        } overflow-hidden`}
-      >
-        <div className="h-full flex flex-col">
-          <div className="p-4 text-center border-b h-16 flex items-center justify-center">
-            <h3 className="font-semibold text-lg">
-              Hola, {userProfile?.name.split(' ')[0]}
-            </h3>
-          </div>
-          <div className="p-4 flex-1">
-            <h2 className="text-lg font-semibold mb-4">Mis Alumnos</h2>
-            <div className="flex-1 space-y-3 overflow-auto">
-              {loading ? (
-                <p>Cargando alumnos...</p>
-              ) : students.length > 0 ? (
-                students.map((student) => (
-                  <div
-                    key={student.id}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage
-                          src={`https://api.dicebear.com/7.x/initials/svg?seed=${student.name}`}
-                        />
-                        <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{student.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {student.school}
-                        </p>
-                      </div>
-                    </div>
-                    <Link href={`/teacher/student/${student.id}`}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 px-3 bg-primary/10 border-primary/20 text-primary hover:bg-primary/20"
-                      >
-                        Ver
-                      </Button>
-                    </Link>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground text-center pt-8">
-                  Aún no tienes alumnos vinculados.
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="p-4 border-t">
-            {userProfile && (
-              <InviteButton
-                teacherId={userProfile.id}
-                schoolName={userProfile.school}
-              />
-            )}
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }
-
-    

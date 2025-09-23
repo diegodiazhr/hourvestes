@@ -28,8 +28,8 @@ function StudentProgressCard({ student }: { student: UserProfile & { totalHours:
                 <CardContent>
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-medium text-muted-foreground">Progreso de Horas</span>
-                            <span className="text-sm font-bold">{student.totalHours.toFixed(1)} / {GOAL_HOURS} h</span>
+                            <span className="text-sm font-medium text-muted-foreground">Progreso</span>
+                            <span className="text-sm font-bold">{student.totalHours.toFixed(0)} / {GOAL_HOURS} h</span>
                         </div>
                         <Progress value={progress} className="h-2" />
                         <p className="text-xs text-right mt-1 text-muted-foreground">{progress.toFixed(1)}% completado</p>
@@ -42,7 +42,7 @@ function StudentProgressCard({ student }: { student: UserProfile & { totalHours:
 
 function StudentsListSkeleton() {
     return (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1 gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i}>
                     <CardHeader className="flex flex-row items-center gap-4">
@@ -69,17 +69,15 @@ interface StudentsListProps {
 
 export default function StudentsList({ userProfile, students, loading }: StudentsListProps) {
     return (
-        <Card className="mt-8">
+        <Card>
             <CardHeader>
-                <div>
-                    <CardTitle className="text-2xl font-bold font-headline">Mis Alumnos</CardTitle>
-                    <CardDescription>Visualiza y gestiona el progreso de tus alumnos{userProfile?.school ? ` de ${userProfile.school}` : ''}.</CardDescription>
-                </div>
+                <CardTitle className="text-xl font-bold font-headline">Mis Alumnos</CardTitle>
+                <CardDescription>Visualiza y gestiona el progreso de tus alumnos.</CardDescription>
             </CardHeader>
             <CardContent>
                 {loading ? <StudentsListSkeleton /> : (
                     students.length > 0 ? (
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1 gap-6">
                             {students.map(student => (
                                 <StudentProgressCard key={student.id} student={student} />
                             ))}
@@ -87,7 +85,7 @@ export default function StudentsList({ userProfile, students, loading }: Student
                     ) : (
                         <div className="text-center py-12 border-2 border-dashed rounded-lg">
                             <p className="text-muted-foreground">Aún no tienes alumnos vinculados.</p>
-                            <p className="text-muted-foreground mt-2">Usa el botón de invitar para empezar.</p>
+                            <p className="text-muted-foreground mt-2 text-sm">Usa el botón de invitar para empezar.</p>
                         </div>
                     )
                 )}

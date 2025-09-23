@@ -1,12 +1,24 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Users can only read/write their own profile
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Rules for the 'projects' collection
     match /projects/{projectId} {
-      allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow a user to read a project if they are the owner
+      allow get: if request.auth != null && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid;
+
+      // Allow a user to list their own projects
+      allow list: if request.auth != null && request.query.where.path == "userId" && request.query.where.op == "==" && request.query.where.value == request.auth.uid;
+      
+      // Allow a user to create a project if the new document's userId matches their own
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+
+      // Allow a user to update or delete their own project
+      allow update, delete: if request.auth != null && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid;
     }
   }
 }

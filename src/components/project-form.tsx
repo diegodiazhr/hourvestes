@@ -100,29 +100,30 @@ export function ProjectForm() {
     }
     setIsPending(true);
 
-    const projectData = {
-      name: data.name,
-      description: data.description,
-      category: data.category,
-      dates: {
-        from: data.dates.from.toISOString(),
-        to: data.dates.to?.toISOString(),
-      },
-      learningOutcomes: data.learningOutcomes,
-      personalGoals: data.personalGoals || '',
-    };
-    
     try {
-        await createProjectAction(projectData);
+        const idToken = await user.getIdToken();
+        const projectData = {
+          name: data.name,
+          description: data.description,
+          category: data.category,
+          dates: {
+            from: data.dates.from.toISOString(),
+            to: data.dates.to?.toISOString(),
+          },
+          learningOutcomes: data.learningOutcomes,
+          personalGoals: data.personalGoals,
+        };
+        
+        await createProjectAction(idToken, projectData);
         toast({
             title: "¡Proyecto Creado!",
             description: "Tu nuevo proyecto CAS ha sido guardado exitosamente.",
         });
-    } catch(e) {
+    } catch(e: any) {
         console.error(e);
         toast({
-            title: "Error",
-            description: "No se pudo crear el proyecto. Por favor, inténtalo de nuevo.",
+            title: "Error al crear proyecto",
+            description: e.message || "No se pudo crear el proyecto. Por favor, inténtalo de nuevo.",
             variant: 'destructive',
         });
     } finally {

@@ -2,7 +2,6 @@
 
 # dependencies
 /node_modules
-/functions/node_modules
 /.pnp
 .pnp.js
 
@@ -26,15 +25,19 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# Firebase
-.firebase
+# firebase
+.firebase/
+database-debug.log
+firestore-debug.log
+storage-debug.log
 firebase-debug.log
+
+# functions dependencies
+/functions/node_modules
+/functions/.DS_Store
+/functions/*.log

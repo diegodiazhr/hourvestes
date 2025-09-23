@@ -250,6 +250,7 @@ export function ProjectForm() {
                       placeholder="¿Qué esperas lograr con este proyecto?"
                       className="resize-y"
                       {...field}
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />

@@ -3,11 +3,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
-import { db } from './firebase';
-import { Timestamp } from 'firebase/firestore';
-import { LearningOutcome } from './types';
 import { getFirebaseAdmin } from './firebase-admin';
+import { LearningOutcome } from './types';
+import { Timestamp } from 'firebase-admin/firestore';
+
 
 // Define the shape of the data coming from the form
 const ProjectDataSchema = z.object({
@@ -56,7 +55,7 @@ export async function createProjectAction(idToken: string, data: ProjectData) {
     validatedFields.data;
 
   try {
-    await addDoc(collection(db, 'projects'), {
+    await adminDb.collection('projects').add({
       userId: uid,
       name,
       description,
@@ -79,12 +78,14 @@ export async function createProjectAction(idToken: string, data: ProjectData) {
 }
 
 export async function updateTimeEntriesAction(projectId: string, timeEntries: any[]) {
-   // For now, we allow this without strict auth for simplicity,
-   // but in a real app, you'd verify ownership.
-  const projectRef = doc(db, 'projects', projectId);
+   const { adminDb } = getFirebaseAdmin();
+   if (!adminDb) {
+    throw new Error('Firebase Admin SDK no inicializado. Revisa las variables de entorno del servidor.');
+   }
+  const projectRef = adminDb.collection('projects').doc(projectId);
   
   try {
-    await updateDoc(projectRef, {
+    await projectRef.update({
       timeEntries: timeEntries,
     });
     revalidatePath(`/projects/${projectId}`);
@@ -94,3 +95,4 @@ export async function updateTimeEntriesAction(projectId: string, timeEntries: an
     throw new Error('No se pudieron actualizar las entradas de tiempo.');
   }
 }
+

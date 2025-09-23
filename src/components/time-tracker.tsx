@@ -7,6 +7,7 @@ import { Clock, PlayCircle, StopCircle, Timer } from 'lucide-react';
 import type { Project, TimeEntry } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { updateTimeEntriesAction } from '@/lib/actions';
+import { useAuth } from '@/hooks/use-auth';
 
 function formatDuration(milliseconds: number) {
   const totalSeconds = Math.floor(milliseconds / 1000);
@@ -19,6 +20,7 @@ function formatDuration(milliseconds: number) {
 }
 
 export function TimeTracker({ project }: { project: Project }) {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(project.timeEntries || []);
   const [isPending, setIsPending] = useState(false);

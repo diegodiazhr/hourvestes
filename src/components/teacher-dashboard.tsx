@@ -10,6 +10,7 @@ import MyStudentsPage from '@/app/teacher/students/page';
 import { getStudentsForTeacher, getProjectsForStudent } from '@/lib/data';
 import type { UserProfile, Project } from '@/lib/types';
 import { GOAL_HOURS } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TeacherDashboard() {
   const { userProfile } = useAuth();
@@ -109,7 +110,7 @@ export default function TeacherDashboard() {
                     <UserPlus className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="pt-6">
-                    <MyStudentsPage.InviteButton userProfile={userProfile} />
+                    <InviteButton userProfile={userProfile} />
                 </CardContent>
             </Card>
         </div>
@@ -129,13 +130,20 @@ function InviteButton({ userProfile }: { userProfile: UserProfile | null }) {
     const { toast } = useToast();
 
     const handleInvite = () => {
-        if (!userProfile) return;
+        if (!userProfile) {
+             toast({
+                variant: 'destructive',
+                title: "Error de Perfil",
+                description: "No se puede generar el enlace porque tu perfil no está cargado.",
+            });
+            return;
+        };
 
         const baseUrl = 'https://studio-6718836827-4de5a.web.app';
         const schoolQueryParam = userProfile.school
           ? `&school=${encodeURIComponent(userProfile.school)}`
           : '';
-        const inviteLink = `${baseUrl}/register?teacherId=${userProfile.id}${schoolQueryParam}`;
+        const inviteLink = `${baseUrl}/register?ref=${userProfile.id}${schoolQueryParam}`;
         
         navigator.clipboard.writeText(inviteLink);
 

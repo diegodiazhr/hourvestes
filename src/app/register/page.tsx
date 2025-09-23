@@ -50,7 +50,7 @@ export default function RegisterPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
-  const teacherId = searchParams.get('teacherId');
+  const teacherId = searchParams.get('ref');
   const schoolName = searchParams.get('school');
 
   const form = useForm<z.infer<typeof formSchema>>({

@@ -32,13 +32,8 @@ export async function getProject(id: string): Promise<Project | null> {
     const projectDoc = await getDoc(projectDocRef);
     if (projectDoc.exists()) {
         const data = projectDoc.data() as ProjectDocument;
-        
-        // Security check: ensure the current user owns this project
-        const user = auth.currentUser;
-        if(data.userId !== user?.uid) {
-            return null;
-        }
-
+        // Security is now handled by Firestore rules.
+        // The rule ensures a user can only fetch their own projects.
         return docToProject(data, projectDoc.id);
     }
     return null;

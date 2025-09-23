@@ -1,3 +1,4 @@
+
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -14,6 +15,7 @@ import {
   PlusCircle,
   Search,
   Filter,
+  Copy,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { onStudentsUpdate, getProjectsForStudent } from '@/lib/data';
@@ -27,6 +29,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+
 
 function HourvestLogo() {
   return (
@@ -60,45 +64,41 @@ function HourvestLogo() {
   );
 }
 
-const recentActivities: (Project & { studentName: string; studentCourse: string })[] = [
-    {
-        id: "1",
-        name: 'Understanding Concept Of React',
-        studentName: 'Alumno De Prueba',
-        studentCourse: '1 BACHILLERATO E',
-        category: 'Activity',
-        description: '',
-        startDate: new Date('2023-02-25T00:00:00Z'),
-        endDate: null,
-        learningOutcomes: [],
-        personalGoals: '',
-        progress: 'En curso',
-        reflections: '',
-        evidence: [],
-        userId: ''
-    },
-    {
-        id: "2",
-        name: 'Understanding Concept Of React',
-        studentName: 'Ravi Kumar',
-        studentCourse: '1 BACHILLERATO E',
-        category: 'Service',
-        description: '',
-        startDate: new Date('2023-02-25T00:00:00Z'),
-        endDate: null,
-        learningOutcomes: [],
-        personalGoals: '',
-        progress: 'En curso',
-        reflections: '',
-        evidence: [],
-        userId: ''
-    }
-]
+function InviteButton({ teacherId, schoolName }: { teacherId: string, schoolName?: string }) {
+    const { toast } = useToast();
+
+    const handleInvite = () => {
+        const baseUrl = window.location.origin;
+        const inviteLink = `${baseUrl}/register?ref=${teacherId}${schoolName ? `&school=${encodeURIComponent(schoolName)}` : ''}`;
+        
+        navigator.clipboard.writeText(inviteLink).then(() => {
+            toast({
+                title: "¡Enlace Copiado!",
+                description: "El enlace de invitación ha sido copiado a tu portapapeles.",
+            });
+        }).catch(() => {
+            toast({
+                variant: 'destructive',
+                title: "Error",
+                description: "No se pudo copiar el enlace.",
+            });
+        });
+    };
+
+    return (
+        <Button onClick={handleInvite} size="icon" variant="ghost" className="h-8 w-8">
+            <PlusCircle className="h-5 w-5" />
+        </Button>
+    );
+}
+
+type Activity = Project & { studentName: string };
 
 export default function TeacherDashboard() {
   const { userProfile } = useAuth();
   const router = useRouter();
   const [students, setStudents] = useState<(UserProfile & { totalHours: number })[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -125,6 +125,19 @@ export default function TeacherDashboard() {
           })
         );
         setStudents(studentsWithHours);
+
+        // Fetch all projects for all students
+        const allProjects = await Promise.all(
+          studentProfiles.map(async (student) => {
+            const studentProjects = await getProjectsForStudent(student.id);
+            return studentProjects.map(p => ({...p, studentName: student.name}));
+          })
+        );
+        
+        const flattenedProjects = allProjects.flat();
+        flattenedProjects.sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+        setActivities(flattenedProjects.slice(0, 5)); // Get 5 most recent
+
         setLoading(false);
       });
       return () => unsubscribe();
@@ -179,21 +192,6 @@ export default function TeacherDashboard() {
                     <Building className="h-5 w-5" />
                     Colegio
                 </Link>
-            </div>
-            <div className="space-y-1">
-                <p className="text-xs font-semibold text-muted-foreground px-3">FRIENDS</p>
-                 {['Prashant', 'Prashant', 'Prashant'].map((name, i) => (
-                    <Link key={i} href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:bg-muted">
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${name}`} />
-                            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <span>{name}</span>
-                            <p className="text-xs text-muted-foreground">Software Developer</p>
-                        </div>
-                    </Link>
-                ))}
             </div>
         </div>
 
@@ -266,35 +264,45 @@ export default function TeacherDashboard() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>NOMBRE DEL ALUMNO</TableHead>
-                            <TableHead>CURSO</TableHead>
                             <TableHead>NOMBRE DE LA ACTIVIDAD</TableHead>
                             <TableHead>TIPO DE ACT.</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {recentActivities.map(activity => (
-                             <TableRow key={activity.id}>
-                                <TableCell>
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="h-9 w-9">
-                                            <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${activity.studentName}`} />
-                                            <AvatarFallback>{activity.studentName.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <div className="font-medium">{activity.studentName}</div>
-                                            <div className="text-xs text-muted-foreground">{activity.startDate.toLocaleDateString()}</div>
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className="font-medium bg-primary/10 border-primary/20 text-primary">{activity.studentCourse}</Badge>
-                                </TableCell>
-                                <TableCell>{activity.name}</TableCell>
-                                <TableCell>
-                                    <Badge variant="secondary">{activity.category.toUpperCase()}</Badge>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={3} className="h-24 text-center">
+                                    Cargando actividades...
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : activities.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={3} className="h-24 text-center">
+                                    No hay actividades recientes.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            activities.map(activity => (
+                                <TableRow key={activity.id}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${activity.studentName}`} />
+                                                <AvatarFallback>{activity.studentName.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <div className="font-medium">{activity.studentName}</div>
+                                                <div className="text-xs text-muted-foreground">{activity.startDate.toLocaleDateString()}</div>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{activity.name}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="secondary">{activity.category.toUpperCase()}</Badge>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </Card>
@@ -321,9 +329,7 @@ export default function TeacherDashboard() {
         
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Mis Alumnos</h2>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-                <PlusCircle className="h-5 w-5"/>
-            </Button>
+            {userProfile && <InviteButton teacherId={userProfile.id} schoolName={userProfile.school} />}
         </div>
         <div className="flex-1 space-y-3 overflow-auto">
             {loading ? Array.from({length: 5}).map((_, i) => <div key={i} className="h-10 bg-muted rounded-md animate-pulse" />) : (

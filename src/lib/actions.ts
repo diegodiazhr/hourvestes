@@ -1,28 +1,80 @@
-// In a real app, you would connect to a database here.
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db } from './firebase';
+import { Timestamp } from 'firebase/firestore';
 
 const projectSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  category: z.enum(['Creativity', 'Activity', 'Service']),
-  dates: z.string(),
-  learningOutcomes: z.string(),
+  name: z.string().min(3),
+  description: z.string().min(10),
+  category: z.enum(['Creatividad', 'Actividad', 'Servicio']),
+  dates: z.object({
+      from: z.date(),
+      to: z.date(),
+  }),
+  learningOutcomes: z.array(z.string()).min(1),
   personalGoals: z.string().optional(),
 });
 
 export async function createProjectAction(formData: FormData) {
   const rawData = Object.fromEntries(formData);
-  const data = {
-    ...rawData,
-    dates: JSON.parse(rawData.dates as string),
+  const parsedDates = JSON.parse(rawData.dates as string);
+  const validatedFields = projectSchema.safeParse({
+    name: rawData.name,
+    description: rawData.description,
+    category: rawData.category,
+    dates: {
+        from: new Date(parsedDates.from),
+        to: new Date(parsedDates.to),
+    },
     learningOutcomes: (rawData.learningOutcomes as string).split(','),
+    personalGoals: rawData.personalGoals,
+  });
+
+  if (!validatedFields.success) {
+    console.error('Validation failed:', validatedFields.error.flatten().fieldErrors);
+    throw new Error('Falló la validación del proyecto.');
   }
-  console.log('New project created (simulated):', data);
+
+  const { name, description, category, dates, learningOutcomes, personalGoals } = validatedFields.data;
+
+  try {
+    await addDoc(collection(db, 'projects'), {
+      name,
+      description,
+      category,
+      startDate: Timestamp.fromDate(dates.from),
+      endDate: Timestamp.fromDate(dates.to),
+      learningOutcomes,
+      personalGoals: personalGoals || '',
+      progress: 'Planificación',
+      reflections: '',
+      evidence: [],
+      timeEntries: [],
+    });
+  } catch (error) {
+    console.error("Error creating project:", error);
+    throw new Error('No se pudo crear el proyecto en la base de datos.');
+  }
 
   revalidatePath('/');
   redirect('/');
+}
+
+export async function updateTimeEntriesAction(projectId: string, timeEntries: any[]) {
+    const projectRef = doc(db, 'projects', projectId);
+    try {
+        await updateDoc(projectRef, {
+            timeEntries: timeEntries
+        });
+        revalidatePath(`/projects/${projectId}`);
+        revalidatePath(`/`);
+    } catch (error) {
+        console.error("Error updating time entries:", error);
+        throw new Error('No se pudieron actualizar las entradas de tiempo.');
+    }
 }

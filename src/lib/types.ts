@@ -1,3 +1,6 @@
+
+import type { Timestamp } from "firebase/firestore";
+
 export type CASCategory = 'Creatividad' | 'Actividad' | 'Servicio';
 
 export const learningOutcomes = [
@@ -32,6 +35,20 @@ export type Project = {
   category: CASCategory;
   startDate: Date;
   endDate: Date;
+  learningOutcomes: LearningOutcome[];
+  personalGoals: string;
+  reflections: string;
+  evidence: Evidence[];
+  progress: 'Planificación' | 'En curso' | 'Completado';
+  timeEntries?: TimeEntry[];
+};
+
+export type ProjectDocument = {
+  name: string;
+  description: string;
+  category: CASCategory;
+  startDate: Timestamp;
+  endDate: Timestamp;
   learningOutcomes: LearningOutcome[];
   personalGoals: string;
   reflections: string;

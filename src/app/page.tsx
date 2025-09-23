@@ -1,12 +1,15 @@
+
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 import { ProjectCard } from '@/components/project-card';
-import { projects } from '@/lib/data';
+import { getProjects } from '@/lib/data';
 import { TimeSummaryChart } from '@/components/time-summary-chart';
 
-export default function Home() {
+export default async function Home() {
+  const projects = await getProjects();
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Header />

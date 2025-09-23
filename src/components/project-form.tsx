@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,10 +53,11 @@ const projectFormSchema = z.object({
   dates: z.object(
     {
       from: z.date({ required_error: 'Se requiere una fecha de inicio.' }),
-      to: z.date({ required_error: 'Se requiere una fecha de finalización.' }),
-    },
-    { required_error: 'Las fechas del proyecto son obligatorias.' }
-  ),
+      to: z.date().optional(),
+    }
+  ).refine(data => data.from, {
+      message: "La fecha de inicio es obligatoria"
+  }),
   learningOutcomes: z.array(z.string()).refine(value => value.some(item => item), {
     message: 'Debes seleccionar al menos un resultado de aprendizaje.',
   }),
@@ -66,6 +68,10 @@ type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
 const defaultValues: Partial<ProjectFormValues> = {
   learningOutcomes: [],
+  dates: {
+    from: new Date(),
+    to: new Date(new Date().setMonth(new Date().getMonth() + 1))
+  }
 };
 
 export function ProjectForm() {
@@ -83,7 +89,8 @@ export function ProjectForm() {
     formData.append('name', data.name);
     formData.append('description', data.description);
     formData.append('category', data.category);
-    formData.append('dates', JSON.stringify(data.dates));
+    // @ts-ignore
+    formData.append('dates', JSON.stringify({from: data.dates.from.toISOString(), to: data.dates.to?.toISOString() || data.dates.from.toISOString()}));
     formData.append('learningOutcomes', data.learningOutcomes.join(','));
     if(data.personalGoals) formData.append('personalGoals', data.personalGoals);
     

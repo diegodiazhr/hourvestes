@@ -1,4 +1,5 @@
-import { projects } from '@/lib/data';
+
+import { getProject } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -17,12 +18,14 @@ import { EvidenceSection } from '@/components/evidence-section';
 import { ReflectionPrompts } from '@/components/reflection-prompts';
 import { TimeTracker } from '@/components/time-tracker';
 
-export default function ProjectDetailPage({
+export const revalidate = 0; // Revalidate this page on every request
+
+export default async function ProjectDetailPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const project = projects.find(p => p.id === params.id);
+  const project = await getProject(params.id);
 
   if (!project) {
     notFound();
@@ -57,7 +60,7 @@ export default function ProjectDetailPage({
             </div>
             <p className="text-muted-foreground capitalize">
               {format(project.startDate, 'd MMMM, yyyy', { locale: es })} -{' '}
-              {project.progress === 'Completado'
+              {project.progress === 'Completado' && project.endDate
                 ? format(project.endDate, 'd MMMM, yyyy', { locale: es })
                 : 'Actual'}
             </p>
@@ -124,7 +127,7 @@ export default function ProjectDetailPage({
 
             <div className="space-y-8 sticky top-24">
               <TimeTracker project={project} />
-              <EvidenceSection evidence={project.evidence} />
+              <EvidenceSection evidence={project.evidence || []} />
               <ReflectionPrompts project={project} />
             </div>
           </div>

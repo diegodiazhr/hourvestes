@@ -1,10 +1,12 @@
+
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Clock, PlayCircle, StopCircle, Timer } from 'lucide-react';
 import type { Project, TimeEntry } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { updateTimeEntriesAction } from '@/lib/actions';
 
 function formatDuration(milliseconds: number) {
   const totalSeconds = Math.floor(milliseconds / 1000);
@@ -19,26 +21,23 @@ function formatDuration(milliseconds: number) {
 export function TimeTracker({ project }: { project: Project }) {
   const { toast } = useToast();
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(project.timeEntries || []);
-  const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
-  const [totalTime, setTotalTime] = useState(0);
+  const [isPending, setIsPending] = useState(false);
+
+  const activeEntry = timeEntries.find(entry => entry.endTime === null) || null;
+  
+  const totalTime = useMemo(() => {
+    return timeEntries.reduce((acc, entry) => {
+      if (entry.endTime) {
+        const start = new Date(entry.startTime).getTime();
+        const end = new Date(entry.endTime).getTime();
+        return acc + (end - start);
+      }
+      return acc;
+    }, 0);
+  }, [timeEntries])
+
+
   const [elapsedTime, setElapsedTime] = useState(0);
-
-  useEffect(() => {
-    const active = timeEntries.find(entry => entry.endTime === null) || null;
-    setActiveEntry(active);
-
-    const calculateTotalTime = () => {
-      return timeEntries.reduce((acc, entry) => {
-        if (entry.endTime) {
-          const start = new Date(entry.startTime).getTime();
-          const end = new Date(entry.endTime).getTime();
-          return acc + (end - start);
-        }
-        return acc;
-      }, 0);
-    };
-    setTotalTime(calculateTotalTime());
-  }, [timeEntries]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -56,14 +55,30 @@ export function TimeTracker({ project }: { project: Project }) {
     };
   }, [activeEntry]);
 
+  const handleTimeUpdate = async (updatedEntries: TimeEntry[]) => {
+    setIsPending(true);
+    try {
+        await updateTimeEntriesAction(project.id, updatedEntries);
+        setTimeEntries(updatedEntries);
+    } catch (e) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'No se pudo actualizar el registro de tiempo.',
+        });
+    } finally {
+        setIsPending(false);
+    }
+  }
+
   const handleClockIn = () => {
-    if(activeEntry) return;
+    if(activeEntry || isPending) return;
     const newEntry: TimeEntry = {
       startTime: new Date().toISOString(),
       endTime: null,
     };
-    // In a real app, this would be persisted to a database
-    setTimeEntries([...timeEntries, newEntry]);
+    const updatedEntries = [...timeEntries, newEntry];
+    handleTimeUpdate(updatedEntries);
     toast({
       title: '¡Fichaje de entrada!',
       description: 'Has empezado a registrar tu tiempo para este proyecto.',
@@ -71,15 +86,14 @@ export function TimeTracker({ project }: { project: Project }) {
   };
 
   const handleClockOut = () => {
-    if(!activeEntry) return;
+    if(!activeEntry || isPending) return;
 
     const updatedEntries = timeEntries.map(entry =>
       entry.startTime === activeEntry.startTime
         ? { ...entry, endTime: new Date().toISOString() }
         : entry
     );
-     // In a real app, this would be persisted to a database
-    setTimeEntries(updatedEntries);
+    handleTimeUpdate(updatedEntries);
     toast({
       title: '¡Fichaje de salida!',
       description: 'Has detenido el registro de tiempo.',
@@ -102,10 +116,10 @@ export function TimeTracker({ project }: { project: Project }) {
           <p className="text-4xl font-bold font-mono tracking-tighter">{displayTime}</p>
         </div>
         <div className="grid grid-cols-2 gap-2">
-            <Button onClick={handleClockIn} disabled={!!activeEntry} variant="outline">
+            <Button onClick={handleClockIn} disabled={!!activeEntry || isPending} variant="outline">
                 <PlayCircle className="mr-2" /> Fichar
             </Button>
-            <Button onClick={handleClockOut} disabled={!activeEntry} variant="destructive">
+            <Button onClick={handleClockOut} disabled={!activeEntry || isPending} variant="destructive">
                 <StopCircle className="mr-2" /> Parar
             </Button>
         </div>

@@ -29,13 +29,17 @@ export async function createProjectAction(userId: string, formData: FormData) {
   const rawData = Object.fromEntries(formData);
   const parsedDates = JSON.parse(rawData.dates as string);
   
+  // Correctly construct the object for validation, without spreading rawData
   const dataToValidate = {
-    ...rawData,
+    name: rawData.name,
+    description: rawData.description,
+    category: rawData.category,
     dates: {
         from: parsedDates.from,
         to: parsedDates.to,
     },
     learningOutcomes: rawData.learningOutcomes,
+    personalGoals: rawData.personalGoals,
   };
 
   const validatedFields = projectSchema.safeParse(dataToValidate);
@@ -55,7 +59,7 @@ export async function createProjectAction(userId: string, formData: FormData) {
       startDate: Timestamp.fromDate(dates.from),
       endDate: dates.to ? Timestamp.fromDate(dates.to) : null,
       learningOutcomes,
-      personalGoals: personalGoals || '', // Ensure it's an empty string if undefined
+      personalGoals: personalGoals || '',
       progress: 'Planificación',
       reflections: '',
       evidence: [],

@@ -55,17 +55,12 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     return null;
 }
 
-export function onStudentsUpdate(teacherProfile: UserProfile, callback: (students: UserProfile[]) => void) {
-    if (teacherProfile.role !== 'Profesor') {
-      callback([]);
-      return () => {}; // Devuelve una función vacía para cancelar la suscripción
-    }
-  
+export function onStudentsUpdate(teacherId: string, callback: (students: UserProfile[]) => void) {
     const usersCol = collection(db, 'users');
     const q = query(
       usersCol,
       where('role', '==', 'Alumno'),
-      where('teacherId', '==', teacherProfile.id)
+      where('teacherId', '==', teacherId)
     );
   
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -83,13 +78,9 @@ export function onStudentsUpdate(teacherProfile: UserProfile, callback: (student
       callback(studentList);
     });
   
-    return unsubscribe; // Devuelve la función para cancelar la suscripción
+    return unsubscribe;
 }
 
-// This function is intended to be called from a teacher's context,
-// but Firestore rules will enforce that a user can only get their own projects.
-// For a teacher to view a student's projects, we will need a Cloud Function or
-// more complex security rules. For now, we will use this and assume rules allow it.
 export async function getProjectsForStudent(studentId: string): Promise<Project[]> {
     const projectsCol = collection(db, 'projects');
     const q = query(projectsCol, where('userId', '==', studentId), orderBy('startDate', 'desc'));
@@ -100,4 +91,3 @@ export async function getProjectsForStudent(studentId: string): Promise<Project[
     });
     return projectList;
 }
-

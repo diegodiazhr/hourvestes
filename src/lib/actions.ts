@@ -3,11 +3,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
 import { LearningOutcome } from './types';
-import { adminAuth, adminDb } from './firebase-admin';
+import { getFirebaseAdmin } from './firebase-admin';
 
 // Define the shape of the data coming from the form
 const ProjectDataSchema = z.object({
@@ -25,6 +25,8 @@ const ProjectDataSchema = z.object({
 type ProjectData = z.infer<typeof ProjectDataSchema>;
 
 export async function createProjectAction(idToken: string, data: ProjectData) {
+  const { adminAuth, adminDb } = getFirebaseAdmin();
+
   if (!adminAuth || !adminDb) {
     throw new Error('Firebase Admin SDK no inicializado. Revisa las variables de entorno del servidor.');
   }

@@ -17,14 +17,10 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
 });
 
-const publicRoutes = ['/login', '/register'];
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -41,20 +37,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (loading) return;
-
-    const isPublic = publicRoutes.some(route => pathname.startsWith(route));
-
-    if (!user && !isPublic) {
-      router.push('/login');
-    }
-
-    if(user && isPublic) {
-        router.push('/');
-    }
-  }, [user, loading, pathname, router]);
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading }}>

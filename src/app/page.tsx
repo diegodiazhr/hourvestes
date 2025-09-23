@@ -1,14 +1,26 @@
 
 'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import StudentDashboard from '@/components/student-dashboard';
 import TeacherDashboard from '@/components/teacher-dashboard';
 import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 
-export default function Home() {
-  const { userProfile, loading } = useAuth();
+const publicRoutes = ['/login', '/register'];
 
-  if (loading) {
+export default function Home() {
+  const { user, userProfile, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [loading, user, router]);
+  
+
+  if (loading || !user) {
     return <DashboardSkeleton />;
   }
 
@@ -16,11 +28,5 @@ export default function Home() {
     return <TeacherDashboard />;
   }
 
-  // Default to student dashboard if userProfile is available
-  if (userProfile) {
-    return <StudentDashboard />;
-  }
-
-  // Fallback while redirecting or if userProfile is null
-  return <DashboardSkeleton />;
+  return <StudentDashboard />;
 }

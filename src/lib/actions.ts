@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -21,9 +22,8 @@ const projectSchema = z.object({
 });
 
 
-export async function createProjectAction(formData: FormData) {
-  const user = auth.currentUser;
-  if (!user) {
+export async function createProjectAction(userId: string, formData: FormData) {
+  if (!userId) {
     throw new Error('Debes iniciar sesión para crear un proyecto.');
   }
 
@@ -61,7 +61,7 @@ export async function createProjectAction(formData: FormData) {
       reflections: '',
       evidence: [],
       timeEntries: [],
-      userId: user.uid
+      userId: userId
     });
   } catch (error) {
     console.error("Error creating project:", error);
@@ -85,3 +85,5 @@ export async function updateTimeEntriesAction(projectId: string, timeEntries: an
         throw new Error('No se pudieron actualizar las entradas de tiempo.');
     }
 }
+
+    

@@ -39,6 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CasCategoryIcon } from './cas-category-icon';
 import { useState } from 'react';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/use-auth';
 
 const projectFormSchema = z.object({
   name: z.string().min(3, {
@@ -79,6 +80,7 @@ const defaultValues: Partial<ProjectFormValues> = {
 };
 
 export function ProjectForm() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
 
@@ -88,7 +90,16 @@ export function ProjectForm() {
   });
 
   async function onSubmit(data: ProjectFormValues) {
+    if (!user) {
+        toast({
+            title: "Error de autenticación",
+            description: "Debes iniciar sesión para crear un proyecto.",
+            variant: 'destructive',
+        });
+        return;
+    }
     setIsPending(true);
+
     const formData = new FormData();
     formData.append('name', data.name);
     formData.append('description', data.description);
@@ -98,7 +109,7 @@ export function ProjectForm() {
     if(data.personalGoals) formData.append('personalGoals', data.personalGoals);
     
     try {
-        await createProjectAction(formData);
+        await createProjectAction(user.uid, formData);
         toast({
             title: "¡Proyecto Creado!",
             description: "Tu nuevo proyecto CAS ha sido guardado exitosamente.",
@@ -112,7 +123,6 @@ export function ProjectForm() {
     } finally {
         setIsPending(false);
     }
-
   }
 
   return (
@@ -318,3 +328,5 @@ export function ProjectForm() {
     </Form>
   );
 }
+
+    

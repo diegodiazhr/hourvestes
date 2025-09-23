@@ -5,9 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { collection, addDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
-import { db, auth } from './firebase';
+import { db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
@@ -56,7 +55,7 @@ export async function createProjectAction(userId: string, formData: FormData) {
       startDate: Timestamp.fromDate(dates.from),
       endDate: dates.to ? Timestamp.fromDate(dates.to) : null,
       learningOutcomes,
-      personalGoals: personalGoals || '',
+      personalGoals: personalGoals || '', // Ensure it's an empty string if undefined
       progress: 'Planificación',
       reflections: '',
       evidence: [],
@@ -85,5 +84,3 @@ export async function updateTimeEntriesAction(projectId: string, timeEntries: an
         throw new Error('No se pudieron actualizar las entradas de tiempo.');
     }
 }
-
-    

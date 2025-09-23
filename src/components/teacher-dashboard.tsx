@@ -116,7 +116,7 @@ export default function TeacherDashboard() {
         </div>
         
         <MyStudentsPage 
-            students={students} 
+            students={students || []} 
             loading={loading} 
             userProfile={userProfile} 
         />

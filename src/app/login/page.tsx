@@ -2,7 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, AuthError } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -79,10 +79,31 @@ export default function LoginPage() {
       });
       router.push('/');
     } catch (error) {
+        const authError = error as AuthError;
+        let title = 'Error de inicio de sesión';
+        let description = 'Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo.';
+
+        switch (authError.code) {
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+            case 'auth/invalid-credential':
+                title = 'Credenciales Inválidas';
+                description = 'El correo electrónico o la contraseña no son correctos. Por favor, verifica tus datos.';
+                break;
+            case 'auth/invalid-email':
+                title = 'Correo Inválido';
+                description = 'El formato del correo electrónico no es válido.';
+                break;
+            case 'auth/too-many-requests':
+                title = 'Demasiados Intentos';
+                description = 'El acceso a esta cuenta ha sido temporalmente deshabilitado debido a muchos intentos fallidos. Inténtalo más tarde.';
+                break;
+        }
+
       toast({
         variant: 'destructive',
-        title: 'Error de inicio de sesión',
-        description: 'Las credenciales no son correctas. Por favor, inténtalo de nuevo.',
+        title: title,
+        description: description,
       });
     } finally {
         setIsPending(false);
@@ -92,13 +113,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 antialiased">
         <div className="flex flex-col justify-center items-center p-8 lg:p-16 bg-card">
-            <div className="w-full max-w-sm mx-auto">
+            <div className="w-full max-w-md mx-auto">
                 <div className="mb-8 text-center md:text-left">
                     <h1 className="text-3xl font-bold font-headline mb-2">
                         Bienvenid@ de vuelta 👋
                     </h1>
                     <p className="text-muted-foreground">
-                        ¡Bienvenido a HourVest, donde podrás organizar todas tus actividades en un solo click!
+                        Inicia sesión para gestionar tus proyectos CAS.
                     </p>
                 </div>
 
@@ -133,11 +154,11 @@ export default function LoginPage() {
 
                         <div className="text-right">
                             <Link href="#" className="text-sm font-medium text-primary hover:underline">
-                                ¿Has olvidado de tu contraseña?
+                                ¿Has olvidado tu contraseña?
                             </Link>
                         </div>
                         
-                        <Button type="submit" className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold" disabled={isPending}>
+                        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold" disabled={isPending}>
                             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Iniciar Sesión
                         </Button>
@@ -149,13 +170,13 @@ export default function LoginPage() {
                         <span className="w-full border-t" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">Or</span>
+                        <span className="bg-card px-2 text-muted-foreground">O continúa con</span>
                     </div>
                 </div>
 
                 <Button variant="outline" className="w-full" disabled>
                     <GoogleIcon className="mr-2 h-5 w-5" />
-                    Sign in with Google
+                    Google
                 </Button>
 
                 <p className="mt-8 text-center text-sm text-muted-foreground">
@@ -176,7 +197,7 @@ export default function LoginPage() {
           alt="Community work"
           width={1200}
           height={1800}
-          className="h-full w-full object-cover rounded-l-2xl"
+          className="h-full w-full object-cover"
           data-ai-hint="community service volunteering"
           priority
         />
@@ -184,3 +205,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+  

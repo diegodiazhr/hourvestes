@@ -4,7 +4,6 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { getUserProfile, type UserProfile } from '@/lib/data';
-import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 
 interface AuthContextType {
   user: User | null;
@@ -56,16 +55,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         router.push('/');
     }
   }, [user, loading, pathname, router]);
-
-  const isPublic = publicRoutes.some(route => pathname.startsWith(route));
-
-  if (loading && !isPublic) {
-    return <DashboardSkeleton />;
-  }
-  
-  if (!user && !isPublic) {
-    return null; // Don't render anything, the redirect is happening
-  }
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading }}>

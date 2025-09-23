@@ -1,16 +1,13 @@
 
 'use client';
-import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import type { UserProfile, Project } from '@/lib/types';
+import type { UserProfile } from '@/lib/types';
 import { GOAL_HOURS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { UserPlus } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useMemo } from 'react';
 
 function StudentProgressCard({ student }: { student: UserProfile & { totalHours: number } }) {
     const progress = useMemo(() => Math.min((student.totalHours / GOAL_HOURS) * 100, 100), [student.totalHours]);
@@ -64,14 +61,13 @@ function StudentsListSkeleton() {
     )
 }
 
-interface MyStudentsPageProps {
+interface StudentsListProps {
     userProfile: UserProfile | null;
     students: (UserProfile & { totalHours: number })[];
     loading: boolean;
 }
 
-export default function MyStudentsPage({ userProfile, students, loading }: MyStudentsPageProps) {
-
+export default function StudentsList({ userProfile, students, loading }: StudentsListProps) {
     return (
         <Card className="mt-8">
             <CardHeader>

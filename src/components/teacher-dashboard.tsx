@@ -6,7 +6,7 @@ import { Header } from '@/components/header';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, BarChart2, CheckCircle, UserPlus, Link } from 'lucide-react';
-import MyStudentsPage from '@/app/teacher/students/page';
+import StudentsList from '@/components/students-list';
 import { getStudentsForTeacher, getProjectsForStudent } from '@/lib/data';
 import type { UserProfile, Project } from '@/lib/types';
 import { GOAL_HOURS } from '@/lib/types';
@@ -115,8 +115,8 @@ export default function TeacherDashboard() {
             </Card>
         </div>
         
-        <MyStudentsPage 
-            students={students || []} 
+        <StudentsList 
+            students={students} 
             loading={loading} 
             userProfile={userProfile} 
         />
@@ -160,5 +160,3 @@ function InviteButton({ userProfile }: { userProfile: UserProfile | null }) {
         </Button>
     )
 }
-
-MyStudentsPage.InviteButton = InviteButton;

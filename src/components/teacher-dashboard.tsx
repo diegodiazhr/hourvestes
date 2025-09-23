@@ -406,7 +406,7 @@ export default function TeacherDashboard() {
                                 {activity.studentName}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                    {new Date(activity.startDate).toLocaleDateString()}
+                                    {activity.startDate ? new Date(activity.startDate).toLocaleDateString() : ''}
                                 </div>
                             </div>
                             </div>

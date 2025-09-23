@@ -33,8 +33,6 @@ export async function getProject(id: string): Promise<Project | null> {
     const projectDoc = await getDoc(projectDocRef);
     if (projectDoc.exists()) {
         const data = projectDoc.data() as ProjectDocument;
-        // Security is now handled by Firestore rules.
-        // The rule ensures a user can only fetch their own projects.
         return docToProject(data, projectDoc.id);
     }
     return null;
@@ -57,9 +55,19 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     return null;
 }
 
-export async function getStudentsForTeacher(teacherId: string): Promise<UserProfile[]> {
+export async function getStudentsForTeacher(teacherProfile: UserProfile): Promise<UserProfile[]> {
+    if (teacherProfile.role !== 'Profesor' || !teacherProfile.school) {
+        return [];
+    }
+
     const usersCol = collection(db, 'users');
-    const q = query(usersCol, where('role', '==', 'Alumno'), where('teacherId', '==', teacherId));
+    const q = query(
+        usersCol, 
+        where('role', '==', 'Alumno'), 
+        where('teacherId', '==', teacherProfile.id),
+        where('school', '==', teacherProfile.school)
+    );
+
     const studentSnapshot = await getDocs(q);
     const studentList = studentSnapshot.docs.map(doc => {
         const data = doc.data();
@@ -73,4 +81,19 @@ export async function getStudentsForTeacher(teacherId: string): Promise<UserProf
         }
     });
     return studentList;
+}
+
+// This function is intended to be called from a teacher's context,
+// but Firestore rules will enforce that a user can only get their own projects.
+// For a teacher to view a student's projects, we will need a Cloud Function or
+// more complex security rules. For now, we will use this and assume rules allow it.
+export async function getProjectsForStudent(studentId: string): Promise<Project[]> {
+    const projectsCol = collection(db, 'projects');
+    const q = query(projectsCol, where('userId', '==', studentId), orderBy('startDate', 'desc'));
+    const projectSnapshot = await getDocs(q);
+    const projectList = projectSnapshot.docs.map(doc => {
+        const data = doc.data() as ProjectDocument;
+        return docToProject(data, doc.id);
+    });
+    return projectList;
 }

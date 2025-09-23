@@ -2,7 +2,7 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { getStudentsForTeacher, getProjects } from '@/lib/data';
+import { getStudentsForTeacher, getProjectsForStudent } from '@/lib/data';
 import { useAuth } from '@/hooks/use-auth';
 import type { UserProfile, Project, TimeEntry } from '@/lib/types';
 import { GOAL_HOURS } from '@/lib/types';
@@ -67,16 +67,14 @@ function StudentsListSkeleton() {
 }
 
 export default function MyStudentsPage() {
-    const { user } = useAuth();
+    const { userProfile } = useAuth();
     const { toast } = useToast();
     const [students, setStudents] = useState<(UserProfile & { totalHours: number })[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (user) {
-            getStudentsForTeacher(user.uid).then(async (studentProfiles) => {
-                 // This is not performant for many students, but fine for a demo.
-                 // In a real app, this aggregation should be done server-side.
+        if (userProfile && userProfile.role === 'Profesor' && userProfile.school) {
+            getStudentsForTeacher(userProfile).then(async (studentProfiles) => {
                 const studentsWithHours = await Promise.all(studentProfiles.map(async (student) => {
                     const projects = await getProjectsForStudent(student.id);
                     const totalHours = calculateTotalHours(projects);
@@ -86,27 +84,27 @@ export default function MyStudentsPage() {
                 setStudents(studentsWithHours);
                 setLoading(false);
             });
+        } else if (userProfile) {
+            setLoading(false);
         }
-    }, [user]);
+    }, [userProfile]);
 
     const handleInvite = () => {
-        if(!user) return;
-        const inviteLink = `${window.location.origin}/register?teacherId=${user.uid}`;
+        if(!userProfile || !userProfile.school) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Debes tener una institución educativa asignada para poder invitar alumnos.",
+            });
+            return;
+        };
+        const inviteLink = `${window.location.origin}/register?teacherId=${userProfile.id}&school=${encodeURIComponent(userProfile.school)}`;
         navigator.clipboard.writeText(inviteLink);
         toast({
             title: "¡Enlace de Invitación Copiado!",
             description: "Comparte este enlace con tus alumnos para que se registren y se vinculen a ti.",
         });
     };
-
-    // Helper functions to fetch projects and calculate hours for each student
-    const getProjectsForStudent = async (studentId: string): Promise<Project[]> => {
-        // This is a simplified stand-in. In a real app, you'd secure this properly.
-        // For now, we reuse getProjects but it will need to be adapted or secured with rules.
-        // The rules we set up should prevent this from working unless we modify them.
-        // Let's assume we get the projects for the student. A better way is a cloud function.
-        return []; // Returning empty for now as we don't have student-specific project fetching yet.
-    }
 
     const calculateTotalHours = (projects: Project[]) => {
         const totalMilliseconds = projects.reduce((acc, project) => {
@@ -130,7 +128,7 @@ export default function MyStudentsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="text-2xl font-bold font-headline">Mis Alumnos</CardTitle>
-                    <CardDescription>Visualiza y gestiona el progreso de tus alumnos.</CardDescription>
+                    <CardDescription>Visualiza y gestiona el progreso de tus alumnos de {userProfile?.school}.</CardDescription>
                 </div>
                 <Button onClick={handleInvite}>
                     <UserPlus className="mr-2"/>

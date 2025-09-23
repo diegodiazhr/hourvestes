@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -47,8 +47,11 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
+  const teacherId = searchParams.get('teacherId');
+  const schoolName = searchParams.get('school');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,9 +59,19 @@ export default function RegisterPage() {
       name: '',
       email: '',
       password: '',
-      school: '',
+      school: schoolName || '',
+      role: teacherId ? 'Alumno' : undefined,
     },
   });
+
+  useEffect(() => {
+    if (schoolName) {
+      form.setValue('school', schoolName);
+    }
+    if (teacherId) {
+        form.setValue('role', 'Alumno');
+    }
+  }, [schoolName, teacherId, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsPending(true);
@@ -72,6 +85,7 @@ export default function RegisterPage() {
         email: values.email,
         role: values.role,
         school: values.school,
+        ...(teacherId && values.role === 'Alumno' && { teacherId: teacherId }),
       });
 
       toast({
@@ -104,6 +118,11 @@ export default function RegisterPage() {
         <Card>
           <CardHeader>
             <CardTitle>Registro de Nueva Cuenta</CardTitle>
+            {schoolName && teacherId && (
+                <CardDescription>
+                    Te estás registrando como alumno de {schoolName}.
+                </CardDescription>
+            )}
           </CardHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -128,7 +147,7 @@ export default function RegisterPage() {
                     <FormItem>
                       <FormLabel>Institución Educativa</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nombre de tu escuela" {...field} />
+                        <Input placeholder="Nombre de tu escuela" {...field} disabled={!!schoolName} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -169,8 +188,9 @@ export default function RegisterPage() {
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex space-x-4"
+                          disabled={!!teacherId}
                         >
                           {(['Alumno', 'Profesor'] as const).map((role: UserRole) => (
                             <FormItem key={role} className="flex items-center space-x-2 space-y-0">

@@ -34,7 +34,7 @@ export type Project = {
   description: string;
   category: CASCategory;
   startDate: Date;
-  endDate: Date;
+  endDate: Date | null;
   learningOutcomes: LearningOutcome[];
   personalGoals: string;
   reflections: string;
@@ -48,7 +48,7 @@ export type ProjectDocument = {
   description: string;
   category: CASCategory;
   startDate: Timestamp;
-  endDate: Timestamp;
+  endDate: Timestamp | null;
   learningOutcomes: LearningOutcome[];
   personalGoals: string;
   reflections: string;

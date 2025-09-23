@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import {
   Card,
@@ -52,7 +53,7 @@ export function ProjectCard({ project }: Props) {
           </div>
           <CardDescription className="capitalize">
             {format(project.startDate, 'MMM yyyy', { locale: es })} -{' '}
-            {project.progress === 'Completado' ? format(project.endDate, 'MMM yyyy', { locale: es }) : 'Actual'}
+            {project.endDate ? format(project.endDate, 'MMM yyyy', { locale: es }) : 'Actual'}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-grow">

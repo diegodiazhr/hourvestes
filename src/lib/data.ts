@@ -1,5 +1,5 @@
 
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, orderBy, query } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Project, ProjectDocument } from './types';
 
@@ -8,14 +8,15 @@ function docToProject(doc: ProjectDocument, id: string): Project {
         id,
         ...doc,
         startDate: doc.startDate.toDate(),
-        endDate: doc.endDate.toDate(),
+        endDate: doc.endDate ? doc.endDate.toDate() : null,
     };
 }
 
 
 export async function getProjects(): Promise<Project[]> {
     const projectsCol = collection(db, 'projects');
-    const projectSnapshot = await getDocs(projectsCol);
+    const q = query(projectsCol, orderBy('startDate', 'desc'));
+    const projectSnapshot = await getDocs(q);
     const projectList = projectSnapshot.docs.map(doc => {
         const data = doc.data() as ProjectDocument;
         return docToProject(data, doc.id);

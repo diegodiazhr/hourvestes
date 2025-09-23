@@ -31,12 +31,6 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
-  const totalTime = project.timeEntries?.reduce((acc, entry) => {
-    const end = entry.endTime ? new Date(entry.endTime) : new Date();
-    const start = new Date(entry.startTime);
-    return acc + (end.getTime() - start.getTime());
-  }, 0) || 0;
-
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -60,7 +54,7 @@ export default async function ProjectDetailPage({
             </div>
             <p className="text-muted-foreground capitalize">
               {format(project.startDate, 'd MMMM, yyyy', { locale: es })} -{' '}
-              {project.progress === 'Completado' && project.endDate
+              {project.endDate
                 ? format(project.endDate, 'd MMMM, yyyy', { locale: es })
                 : 'Actual'}
             </p>

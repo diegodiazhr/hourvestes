@@ -9,31 +9,29 @@ import { db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
 
 const projectSchema = z.object({
-  name: z.string().min(3),
-  description: z.string().min(10),
+  name: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
+  description: z.string().min(10, { message: 'La descripción debe tener al menos 10 caracteres.' }),
   category: z.enum(['Creatividad', 'Actividad', 'Servicio']),
   dates: z.object({
-      from: z.date(),
-      to: z.date().optional(),
+      from: z.string().transform((str) => new Date(str)),
+      to: z.string().optional().transform((str) => str ? new Date(str) : undefined),
   }),
-  learningOutcomes: z.array(z.string()).min(1),
+  learningOutcomes: z.string().min(1, { message: 'Debes seleccionar al menos un resultado de aprendizaje.'}).transform((str) => str.split(',')),
   personalGoals: z.string().optional(),
 });
+
 
 export async function createProjectAction(formData: FormData) {
   const rawData = Object.fromEntries(formData);
   const parsedDates = JSON.parse(rawData.dates as string);
   
   const dataToValidate = {
-    name: rawData.name,
-    description: rawData.description,
-    category: rawData.category,
+    ...rawData,
     dates: {
-        from: new Date(parsedDates.from),
-        to: parsedDates.to ? new Date(parsedDates.to) : undefined,
+        from: parsedDates.from,
+        to: parsedDates.to,
     },
-    learningOutcomes: (rawData.learningOutcomes as string).split(','),
-    personalGoals: rawData.personalGoals,
+    learningOutcomes: rawData.learningOutcomes,
   };
 
   const validatedFields = projectSchema.safeParse(dataToValidate);
@@ -51,7 +49,7 @@ export async function createProjectAction(formData: FormData) {
       description,
       category,
       startDate: Timestamp.fromDate(dates.from),
-      endDate: dates.to ? Timestamp.fromDate(dates.to) : Timestamp.fromDate(dates.from),
+      endDate: dates.to ? Timestamp.fromDate(dates.to) : null,
       learningOutcomes,
       personalGoals: personalGoals || '',
       progress: 'Planificación',

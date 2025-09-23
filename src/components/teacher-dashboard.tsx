@@ -11,14 +11,14 @@ import {
   Building,
   Settings,
   LogOut,
-  PlusCircle,
+  Copy,
   Search,
   Filter,
-  Copy,
   PanelLeftOpen,
   PanelRightOpen,
   PanelLeftClose,
-  PanelRightClose
+  PanelRightClose,
+  FolderKanban,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { onStudentsUpdate, getProjectsForStudent } from '@/lib/data';
@@ -40,36 +40,46 @@ import {
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-function HourvestLogo() {
+
+function HourvestLogo({ collapsed }: { collapsed: boolean }) {
   return (
-    <svg
-      width="32"
-      height="32"
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="text-primary"
-    >
-      <path
-        d="M16 0L29.8564 8V24L16 32L2.14359 24V8L16 0Z"
-        fill="currentColor"
-      />
-      <path
-        d="M23 12L16 16L9 12"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M16 26V16"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <div className={`flex items-center gap-2 ${collapsed ? 'justify-center' : 'px-4'}`}>
+      <div
+        className={`bg-primary rounded-lg transition-all duration-300 ${collapsed ? 'w-10 h-10' : 'w-10 h-10'}`}
+        >
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className={`text-primary-foreground m-2 transition-all duration-300 ${collapsed ? 'w-6 h-6' : 'w-6 h-6'}`}
+        >
+        <path
+            d="M12 2L19.5 6L12 10L4.5 6L12 2Z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M4.5 18L12 22L19.5 18"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M4.5 12L12 16L19.5 12"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        </svg>
+    </div>
+      <h1 className={`text-xl font-bold origin-left transition-all duration-200 ${collapsed ? 'scale-x-0 w-0' : 'scale-x-100'}`}>HOURVEST</h1>
+    </div>
   );
 }
 
@@ -204,88 +214,69 @@ export default function TeacherDashboard() {
     router.push('/login');
   };
 
+  const NavLink = ({ href, icon, label, collapsed }: { href: string, icon: React.ReactNode, label: string, collapsed: boolean }) => {
+    const content = (
+        <Link
+            href={href}
+            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all ${collapsed ? 'justify-center' : ''} text-muted-foreground hover:bg-muted hover:text-foreground`}
+        >
+            {icon}
+            <span className={`origin-left transition-all duration-200 ${collapsed ? 'w-0 scale-x-0' : 'w-auto scale-x-100'}`}>{label}</span>
+        </Link>
+    );
+
+    if (collapsed) {
+        return (
+            <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>{content}</TooltipTrigger>
+                    <TooltipContent side="right">
+                        <p>{label}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        );
+    }
+
+    return content;
+};
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Left Sidebar */}
       <aside
-        className={`bg-card text-card-foreground border-r transition-all duration-300 ${
-          isLeftSidebarOpen ? 'w-64' : 'w-0'
-        } overflow-hidden`}
+        className={`bg-card text-card-foreground border-r transition-all duration-300 flex flex-col ${
+          isLeftSidebarOpen ? 'w-64' : 'w-20'
+        }`}
       >
-        <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center gap-2 border-b px-4">
-            <HourvestLogo />
-            <h1 className="text-xl font-bold">HOURVEST</h1>
-          </div>
-          <nav className="flex-1 space-y-2 p-4">
-            <p className="px-2 text-xs font-semibold text-muted-foreground">
-              OVERVIEW
-            </p>
-            <Link
-              href="#"
-              className="flex items-center gap-2 rounded-md bg-primary/10 px-2 py-1.5 text-sm font-medium text-primary"
-            >
-              <Home />
-              <span>Inicio</span>
-            </Link>
-            <Link
-              href="#"
-              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted"
-            >
-              <Users />
-              <span>Mis Alumnos</span>
-            </Link>
-            <Link
-              href="#"
-              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted"
-            >
-              <User />
-              <span>Perfil</span>
-            </Link>
-            <Link
-              href="#"
-              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted"
-            >
-              <Building />
-              <span>Colegio</span>
-            </Link>
-          </nav>
-          <div className="mt-auto space-y-2 p-4">
-            <p className="px-2 text-xs font-semibold text-muted-foreground">
-              SETTINGS
-            </p>
-            <Link
-              href="#"
-              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted"
-            >
-              <Settings />
-              <span>Settings</span>
-            </Link>
+        <div className="flex h-16 items-center border-b shrink-0">
+          <HourvestLogo collapsed={!isLeftSidebarOpen} />
+        </div>
+        <nav className="flex-1 space-y-2 p-4">
+            <NavLink href="#" icon={<Home />} label="Inicio" collapsed={!isLeftSidebarOpen} />
+            <NavLink href="#" icon={<Users />} label="Mis Alumnos" collapsed={!isLeftSidebarOpen} />
+            <NavLink href="#" icon={<FolderKanban />} label="Proyectos" collapsed={!isLeftSidebarOpen} />
+            <NavLink href="#" icon={<Building />} label="Colegio" collapsed={!isLeftSidebarOpen} />
+        </nav>
+        <div className="mt-auto space-y-2 p-4 border-t">
+            <NavLink href="#" icon={<Settings />} label="Settings" collapsed={!isLeftSidebarOpen} />
             <button
-              onClick={handleSignOut}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-red-500 hover:bg-red-500/10"
+                onClick={handleSignOut}
+                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all text-red-500 hover:bg-red-500/10 ${!isLeftSidebarOpen ? 'justify-center' : ''}`}
             >
-              <LogOut />
-              <span>Logout</span>
+                <LogOut />
+                <span className={`origin-left transition-all duration-200 ${!isLeftSidebarOpen ? 'w-0 scale-x-0' : 'w-auto scale-x-100'}`}>Logout</span>
             </button>
-          </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 overflow-auto">
-        <header className="flex items-center justify-between mb-8">
+      <div className="flex flex-col flex-1">
+        <header className="flex items-center h-16 justify-between border-b bg-card px-8 shrink-0">
           <div className="flex items-center gap-2">
-            {!isLeftSidebarOpen && (
-              <Button variant="ghost" size="icon" onClick={() => setIsLeftSidebarOpen(true)}>
-                <PanelLeftOpen />
+              <Button variant="ghost" size="icon" onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}>
+                {isLeftSidebarOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
               </Button>
-            )}
-             {isLeftSidebarOpen && (
-              <Button variant="ghost" size="icon" onClick={() => setIsLeftSidebarOpen(false)}>
-                <PanelLeftClose />
-              </Button>
-            )}
             <div className="relative w-full max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input placeholder="Buscar a un alumno..." className="pl-10" />
@@ -295,141 +286,146 @@ export default function TeacherDashboard() {
             <Button variant="ghost" size="icon">
               <Filter className="h-5 w-5" />
             </Button>
-             {!isRightSidebarOpen && (
-              <Button variant="ghost" size="icon" onClick={() => setIsRightSidebarOpen(true)}>
-                <PanelRightOpen />
-              </Button>
-            )}
-             {isRightSidebarOpen && (
-              <Button variant="ghost" size="icon" onClick={() => setIsRightSidebarOpen(false)}>
-                <PanelRightClose />
-              </Button>
-            )}
+            <button onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}>
+                <Avatar className="h-10 w-10 cursor-pointer">
+                    <AvatarImage
+                        src={
+                        userProfile
+                            ? `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile.name}`
+                            : ''
+                        }
+                    />
+                    <AvatarFallback>{userProfile?.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+            </button>
           </div>
         </header>
+        
+        <main className="flex-1 p-8 overflow-auto">
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total de Alumnos
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {loading ? '...' : stats.totalStudents}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Alumnos vinculados a tu cuenta
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                Progreso Medio
-              </CardTitle>
-              <BarChart2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {loading ? '...' : `${stats.averageProgress.toFixed(0)}%`}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                del total de horas CAS completado
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                Alumnos Completados
-              </CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {loading ? '...' : stats.studentsCompleted}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                han alcanzado la meta de horas
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">
+                    Total de Alumnos
+                </CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                <div className="text-2xl font-bold">
+                    {loading ? '...' : stats.totalStudents}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    Alumnos vinculados a tu cuenta
+                </p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">
+                    Progreso Medio
+                </CardTitle>
+                <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                <div className="text-2xl font-bold">
+                    {loading ? '...' : `${stats.averageProgress.toFixed(0)}%`}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    del total de horas CAS completado
+                </p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">
+                    Alumnos Completados
+                </CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                <div className="text-2xl font-bold">
+                    {loading ? '...' : stats.studentsCompleted}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    han alcanzado la meta de horas
+                </p>
+                </CardContent>
+            </Card>
+            </div>
 
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">
-              Actividades Publicadas Recientemente
-            </h2>
-            <Link
-              href="#"
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              Ver todo
-            </Link>
-          </div>
-          <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>NOMBRE DEL ALUMNO</TableHead>
-                  <TableHead>NOMBRE DE LA ACTIVIDAD</TableHead>
-                  <TableHead>TIPO DE ACT.</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
-                      Cargando actividades...
-                    </TableCell>
-                  </TableRow>
-                ) : activities.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
-                      Por ahora, aquí no hay nada :(
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  activities.map((activity) => (
-                    <TableRow key={activity.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage
-                              src={`https://api.dicebear.com/7.x/initials/svg?seed=${activity.studentName}`}
-                            />
-                            <AvatarFallback>
-                              {activity.studentName.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">
-                              {activity.studentName}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                                {new Date(activity.startDate).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{activity.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {activity.category.toUpperCase()}
-                        </Badge>
-                      </TableCell>
+            <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">
+                Actividades Publicadas Recientemente
+                </h2>
+                <Link
+                href="#"
+                className="text-sm font-medium text-primary hover:underline"
+                >
+                Ver todo
+                </Link>
+            </div>
+            <Card>
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>NOMBRE DEL ALUMNO</TableHead>
+                    <TableHead>NOMBRE DE LA ACTIVIDAD</TableHead>
+                    <TableHead>TIPO DE ACT.</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Card>
-        </div>
-      </main>
+                </TableHeader>
+                <TableBody>
+                    {loading ? (
+                    <TableRow>
+                        <TableCell colSpan={3} className="h-24 text-center">
+                        Cargando actividades...
+                        </TableCell>
+                    </TableRow>
+                    ) : activities.length === 0 ? (
+                    <TableRow>
+                        <TableCell colSpan={3} className="h-24 text-center">
+                        Por ahora, aquí no hay nada :(
+                        </TableCell>
+                    </TableRow>
+                    ) : (
+                    activities.map((activity) => (
+                        <TableRow key={activity.id}>
+                        <TableCell>
+                            <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                                <AvatarImage
+                                src={`https://api.dicebear.com/7.x/initials/svg?seed=${activity.studentName}`}
+                                />
+                                <AvatarFallback>
+                                {activity.studentName.charAt(0)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <div className="font-medium">
+                                {activity.studentName}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                    {new Date(activity.startDate).toLocaleDateString()}
+                                </div>
+                            </div>
+                            </div>
+                        </TableCell>
+                        <TableCell>{activity.name}</TableCell>
+                        <TableCell>
+                            <Badge variant="outline" className={`capitalize ${activity.category === 'Creatividad' ? 'border-blue-500 text-blue-500' : activity.category === 'Actividad' ? 'border-green-500 text-green-500' : 'border-orange-500 text-orange-500'}`}>
+                                {activity.category}
+                            </Badge>
+                        </TableCell>
+                        </TableRow>
+                    ))
+                    )}
+                </TableBody>
+                </Table>
+            </Card>
+            </div>
+        </main>
+      </div>
 
       {/* Right Sidebar */}
       <aside
@@ -438,17 +434,7 @@ export default function TeacherDashboard() {
         } overflow-hidden`}
       >
         <div className="h-full flex flex-col">
-          <div className="p-4 text-center border-b">
-            <Avatar className="h-20 w-20 mx-auto mb-2">
-              <AvatarImage
-                src={
-                  userProfile
-                    ? `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile.name}`
-                    : ''
-                }
-              />
-              <AvatarFallback>{userProfile?.name.charAt(0)}</AvatarFallback>
-            </Avatar>
+          <div className="p-4 text-center border-b h-16 flex items-center justify-center">
             <h3 className="font-semibold text-lg">
               Hola, {userProfile?.name.split(' ')[0]}
             </h3>
@@ -509,3 +495,5 @@ export default function TeacherDashboard() {
     </div>
   );
 }
+
+    

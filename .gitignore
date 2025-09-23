@@ -30,14 +30,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# firebase
-.firebase/
-database-debug.log
-firestore-debug.log
-storage-debug.log
-firebase-debug.log
+# vercel
+.vercel
 
-# functions dependencies
-/functions/node_modules
-/functions/.DS_Store
-/functions/*.log
+# typescript
+*.tsbuildinfo
+next-env.d.ts

@@ -5,6 +5,7 @@ import { encrypt, decrypt } from '@/lib/auth-crypt';
 import { auth } from 'firebase-admin';
 import { initFirebaseAdmin } from '@/lib/firebase-admin';
 
+// Inicializa Firebase Admin. Si falla (p.ej., en el build), las funciones no se ejecutarán correctamente pero no romperán el build.
 initFirebaseAdmin();
 
 // Set session
@@ -32,6 +33,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ isLogged: true }, { status: 200 });
   } catch (error) {
     console.error('Error verifying ID token:', error);
+    // Asegurarse que el error es por no inicialización de Firebase
+    if ((error as any).code === 'app/no-app') {
+      return NextResponse.json(
+        { isLogged: false, error: 'Firebase Admin not initialized on the server.' },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({ isLogged: false, error: 'Invalid token' }, { status: 401 });
   }
 }

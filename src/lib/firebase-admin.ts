@@ -14,10 +14,19 @@ const serviceAccount = {
     "client_x509_cert_url": process.env.FIREBASE_CLIENT_X509_CERT_URL
 };
 
-export const initFirebaseAdmin = (): App => {
+export const initFirebaseAdmin = (): App | null => {
+  // Evita que la app crashee en el build si las variables de entorno no están presentes.
+  if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
+    console.warn(
+      'Firebase Admin SDK non-initialized. Service account environment variables are missing.'
+    );
+    return null;
+  }
+
   if (getApps().length) {
     return getApps()[0];
   }
+  
   return initializeApp({
     credential: cert(serviceAccount as any),
   });

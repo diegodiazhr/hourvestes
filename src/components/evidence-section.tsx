@@ -31,8 +31,8 @@ export function EvidenceSection({ evidence }: { evidence: Evidence[] }) {
         // In a real app, this would handle file upload and data saving.
         // For this demo, we just show a toast message.
         toast({
-            title: "Evidence Added (Simulated)",
-            description: "Your new evidence has been added to the project.",
+            title: "Evidencia Añadida (Simulado)",
+            description: "Tu nueva evidencia ha sido añadida al proyecto.",
         })
     };
 
@@ -42,10 +42,10 @@ export function EvidenceSection({ evidence }: { evidence: Evidence[] }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline">
           <Paperclip />
-          Project Evidence
+          Evidencia del Proyecto
         </CardTitle>
         <CardDescription>
-          Photos, videos, and documents from your project.
+          Fotos, videos y documentos de tu proyecto.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -74,39 +74,38 @@ export function EvidenceSection({ evidence }: { evidence: Evidence[] }) {
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full">
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Add Evidence
+                Añadir Evidencia
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleAddEvidence}>
                     <DialogHeader>
-                        <DialogTitle>Add New Evidence</DialogTitle>
+                        <DialogTitle>Añadir Nueva Evidencia</DialogTitle>
                         <DialogDescription>
-                        Upload a file or link to your evidence. This is a demo, no
-                        files will be saved.
+                        Sube un archivo o enlace a tu evidencia. Esto es una demo, no se guardarán archivos.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="title" className="text-right">
-                            Title
+                            Título
                         </Label>
                         <Input
                             id="title"
-                            placeholder="e.g., Team Planning Session"
+                            placeholder="p. ej., Sesión de Planificación"
                             className="col-span-3"
                         />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="file" className="text-right">
-                            File
+                            Archivo
                         </Label>
                         <Input id="file" type="file" className="col-span-3" />
                         </div>
                     </div>
                     <DialogFooter>
                         <DialogTrigger asChild>
-                            <Button type="submit">Save Evidence</Button>
+                            <Button type="submit">Guardar Evidencia</Button>
                         </DialogTrigger>
                     </DialogFooter>
                 </form>

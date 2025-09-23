@@ -1,12 +1,12 @@
 import { projects } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Header } from '@/components/header';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { CasCategoryIcon } from '@/components/cas-category-icon';
 import { CheckCircle2 } from 'lucide-react';
 import { EvidenceSection } from '@/components/evidence-section';
 import { ReflectionPrompts } from '@/components/reflection-prompts';
+import { TimeTracker } from '@/components/time-tracker';
 
 export default function ProjectDetailPage({
   params,
@@ -26,6 +27,12 @@ export default function ProjectDetailPage({
   if (!project) {
     notFound();
   }
+
+  const totalTime = project.timeEntries?.reduce((acc, entry) => {
+    const end = entry.endTime ? new Date(entry.endTime) : new Date();
+    const start = new Date(entry.startTime);
+    return acc + (end.getTime() - start.getTime());
+  }, 0) || 0;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -48,11 +55,11 @@ export default function ProjectDetailPage({
                 {project.category}
               </Badge>
             </div>
-            <p className="text-muted-foreground">
-              {format(project.startDate, 'MMMM d, yyyy')} -{' '}
-              {project.progress === 'Completed'
-                ? format(project.endDate, 'MMMM d, yyyy')
-                : 'Present'}
+            <p className="text-muted-foreground capitalize">
+              {format(project.startDate, 'd MMMM, yyyy', { locale: es })} -{' '}
+              {project.progress === 'Completado'
+                ? format(project.endDate, 'd MMMM, yyyy', { locale: es })
+                : 'Actual'}
             </p>
           </div>
 
@@ -63,7 +70,7 @@ export default function ProjectDetailPage({
               <Card>
                 <CardHeader>
                   <CardTitle className="font-headline">
-                    Project Description
+                    Descripción del Proyecto
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -76,12 +83,12 @@ export default function ProjectDetailPage({
               <Card>
                 <CardHeader>
                   <CardTitle className="font-headline">
-                    Goals & Learning Outcomes
+                    Metas y Resultados de Aprendizaje
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <h3 className="font-semibold mb-2 text-foreground">Personal Goals</h3>
+                    <h3 className="font-semibold mb-2 text-foreground">Metas Personales</h3>
                     <p className="text-foreground/80 whitespace-pre-wrap">
                       {project.personalGoals}
                     </p>
@@ -89,7 +96,7 @@ export default function ProjectDetailPage({
                   <Separator />
                   <div>
                     <h3 className="font-semibold mb-3 text-foreground">
-                      Learning Outcomes Met
+                      Resultados de Aprendizaje Alcanzados
                     </h3>
                     <ul className="space-y-3">
                       {project.learningOutcomes.map((outcome, i) => (
@@ -105,7 +112,7 @@ export default function ProjectDetailPage({
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-headline">Reflections</CardTitle>
+                  <CardTitle className="font-headline">Reflexiones</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-foreground/80 whitespace-pre-wrap">
@@ -116,6 +123,7 @@ export default function ProjectDetailPage({
             </div>
 
             <div className="space-y-8 sticky top-24">
+              <TimeTracker project={project} />
               <EvidenceSection evidence={project.evidence} />
               <ReflectionPrompts project={project} />
             </div>

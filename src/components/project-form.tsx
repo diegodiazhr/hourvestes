@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -40,23 +41,23 @@ import { Label } from '@/components/ui/label';
 
 const projectFormSchema = z.object({
   name: z.string().min(3, {
-    message: 'Project name must be at least 3 characters.',
+    message: 'El nombre del proyecto debe tener al menos 3 caracteres.',
   }),
   description: z.string().min(10, {
-    message: 'Description must be at least 10 characters.',
+    message: 'La descripción debe tener al menos 10 caracteres.',
   }),
-  category: z.enum(['Creativity', 'Activity', 'Service'], {
-    required_error: 'You need to select a project category.',
+  category: z.enum(['Creatividad', 'Actividad', 'Servicio'], {
+    required_error: 'Debes seleccionar una categoría de proyecto.',
   }),
   dates: z.object(
     {
-      from: z.date({ required_error: 'A start date is required.' }),
-      to: z.date({ required_error: 'An end date is required.' }),
+      from: z.date({ required_error: 'Se requiere una fecha de inicio.' }),
+      to: z.date({ required_error: 'Se requiere una fecha de finalización.' }),
     },
-    { required_error: 'Project dates are required.' }
+    { required_error: 'Las fechas del proyecto son obligatorias.' }
   ),
   learningOutcomes: z.array(z.string()).refine(value => value.some(item => item), {
-    message: 'You have to select at least one learning outcome.',
+    message: 'Debes seleccionar al menos un resultado de aprendizaje.',
   }),
   personalGoals: z.string().optional(),
 });
@@ -89,13 +90,13 @@ export function ProjectForm() {
     try {
         await createProjectAction(formData);
         toast({
-            title: "Project Created!",
-            description: "Your new CAS project has been saved successfully.",
+            title: "¡Proyecto Creado!",
+            description: "Tu nuevo proyecto CAS ha sido guardado exitosamente.",
         });
     } catch(e) {
         toast({
             title: "Error",
-            description: "Failed to create project. Please try again.",
+            description: "No se pudo crear el proyecto. Por favor, inténtalo de nuevo.",
             variant: 'destructive',
         });
     } finally {
@@ -109,7 +110,7 @@ export function ProjectForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle>Project Details</CardTitle>
+            <CardTitle>Detalles del Proyecto</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -117,9 +118,9 @@ export function ProjectForm() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Name</FormLabel>
+                  <FormLabel>Nombre del Proyecto</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Community Mural Painting" {...field} />
+                    <Input placeholder="p. ej., Pintura de Mural Comunitario" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -130,10 +131,10 @@ export function ProjectForm() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Descripción</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Tell us a little bit about your project"
+                      placeholder="Cuéntanos un poco sobre tu proyecto"
                       className="resize-y"
                       {...field}
                     />
@@ -147,7 +148,7 @@ export function ProjectForm() {
               name="dates"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Project Dates</FormLabel>
+                  <FormLabel>Fechas del Proyecto</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -160,11 +161,11 @@ export function ProjectForm() {
                         >
                           {field.value?.from ? (
                             <>
-                              {format(field.value.from, 'LLL dd, y')} -{' '}
-                              {field.value.to ? format(field.value.to, 'LLL dd, y') : '...'}
+                              {format(field.value.from, 'd LLL, y', { locale: es })} -{' '}
+                              {field.value.to ? format(field.value.to, 'd LLL, y', { locale: es }) : '...'}
                             </>
                           ) : (
-                            <span>Pick a date range</span>
+                            <span>Elige un rango de fechas</span>
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
@@ -172,6 +173,7 @@ export function ProjectForm() {
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
+                        locale={es}
                         mode="range"
                         selected={field.value}
                         onSelect={field.onChange}
@@ -188,7 +190,7 @@ export function ProjectForm() {
 
         <Card>
           <CardHeader>
-            <CardTitle>CAS Category</CardTitle>
+            <CardTitle>Categoría CAS</CardTitle>
           </CardHeader>
           <CardContent>
             <FormField
@@ -202,7 +204,7 @@ export function ProjectForm() {
                       defaultValue={field.value}
                       className="grid grid-cols-1 md:grid-cols-3 gap-4"
                     >
-                      {(['Creativity', 'Activity', 'Service'] as const).map((category: CASCategory) => (
+                      {(['Creatividad', 'Actividad', 'Servicio'] as const).map((category: CASCategory) => (
                         <FormItem key={category}>
                             <Label className="[&:has([data-state=checked])>div]:border-primary [&:has([data-state=checked])>div]:bg-primary/10">
                                 <FormControl>
@@ -226,7 +228,7 @@ export function ProjectForm() {
         
         <Card>
             <CardHeader>
-                <CardTitle>Goals & Outcomes</CardTitle>
+                <CardTitle>Metas y Resultados</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
             <FormField
@@ -234,10 +236,10 @@ export function ProjectForm() {
               name="personalGoals"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Personal Goals</FormLabel>
+                  <FormLabel>Metas Personales</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="What do you hope to achieve with this project?"
+                      placeholder="¿Qué esperas lograr con este proyecto?"
                       className="resize-y"
                       {...field}
                     />
@@ -252,9 +254,9 @@ export function ProjectForm() {
               render={() => (
                 <FormItem>
                   <div className="mb-4">
-                    <FormLabel className="text-base">Learning Outcomes</FormLabel>
+                    <FormLabel className="text-base">Resultados de Aprendizaje</FormLabel>
                     <FormDescription>
-                      Select all the learning outcomes you aim to meet.
+                      Selecciona todos los resultados de aprendizaje que buscas alcanzar.
                     </FormDescription>
                   </div>
                   <div className="space-y-2">
@@ -299,7 +301,7 @@ export function ProjectForm() {
 
         <Button type="submit" className="w-full md:w-auto" disabled={isPending}>
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Create Project
+          Crear Proyecto
         </Button>
       </form>
     </Form>

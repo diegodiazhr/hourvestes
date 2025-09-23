@@ -34,7 +34,7 @@ export function ReflectionPrompts({ project }: { project: Project }) {
       const result = await generateReflectionPrompts(input);
       setPrompts(result.reflectionPrompts);
     } catch (e) {
-      setError('Failed to generate prompts. Please try again.');
+      setError('No se pudieron generar las sugerencias. Por favor, inténtalo de nuevo.');
       console.error(e);
     } finally {
       setIsLoading(false);
@@ -46,10 +46,10 @@ export function ReflectionPrompts({ project }: { project: Project }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline text-accent-foreground">
           <Sparkles className="text-amber-500" />
-          Reflection Assistant
+          Asistente de Reflexión
         </CardTitle>
         <CardDescription>
-          Use AI to get personalized reflection prompts for your project.
+          Usa la IA para obtener sugerencias de reflexión personalizadas para tu proyecto.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -60,7 +60,7 @@ export function ReflectionPrompts({ project }: { project: Project }) {
             ) : (
               <Wand2 className="mr-2 h-4 w-4" />
             )}
-            {isLoading ? 'Generating...' : 'Generate Prompts'}
+            {isLoading ? 'Generando...' : 'Generar Sugerencias'}
           </Button>
 
           {error && (
@@ -74,7 +74,7 @@ export function ReflectionPrompts({ project }: { project: Project }) {
           {prompts.length > 0 && (
             <div className="mt-4 space-y-3">
               <h4 className="font-semibold text-foreground">
-                Here are some prompts to get you started:
+                Aquí tienes algunas sugerencias para empezar:
               </h4>
               <ul className="list-disc list-inside space-y-2 text-sm text-foreground/80">
                 {prompts.map((prompt, index) => (

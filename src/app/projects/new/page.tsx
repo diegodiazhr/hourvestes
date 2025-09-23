@@ -9,10 +9,10 @@ export default function NewProjectPage() {
         <div className="max-w-3xl mx-auto">
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-bold font-headline text-foreground">
-              Log a New Project
+              Registrar un Nuevo Proyecto
             </h1>
             <p className="text-muted-foreground mt-2">
-              Fill in the details of your CAS experience.
+              Rellena los detalles de tu experiencia CAS.
             </p>
           </div>
           <ProjectForm />

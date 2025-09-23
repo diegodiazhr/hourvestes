@@ -6,69 +6,84 @@ const evidenceImages = PlaceHolderImages.filter(img => img.id.startsWith('eviden
 export const projects: Project[] = [
   {
     id: '1',
-    name: 'Community Mural Painting',
+    name: 'Pintura de Mural Comunitario',
     description:
-      'Organized and led a group of students to paint a mural at the local community center. The project involved designing the mural, sourcing materials, and collaborating with the center\'s management.',
-    category: 'Creativity',
+      'Organicé y lideré a un grupo de estudiantes para pintar un mural en el centro comunitario local. El proyecto implicó diseñar el mural, conseguir los materiales y colaborar con la dirección del centro.',
+    category: 'Creatividad',
     startDate: new Date('2023-09-01'),
     endDate: new Date('2023-10-15'),
     learningOutcomes: [
-      'Demonstrate how to initiate and plan a CAS experience',
-      'Demonstrate the skills and recognize the benefits of working collaboratively',
-      'Recognize and consider the ethics of choices and actions',
+      'Demostrar cómo iniciar y planificar una experiencia CAS',
+      'Demostrar las habilidades y reconocer los beneficios del trabajo en equipo',
+      'Reconocer y considerar la ética de las elecciones y acciones',
     ],
     personalGoals:
-      'My goal is to improve my leadership skills and learn how to manage a long-term creative project from start to finish. I also want to make a lasting positive impact on my local community.',
+      'Mi objetivo es mejorar mis habilidades de liderazgo y aprender a gestionar un proyecto creativo a largo plazo de principio a fin. También quiero tener un impacto positivo y duradero en mi comunidad local.',
     reflections:
-      'This project taught me the importance of clear communication and planning. Working with a diverse team was challenging but ultimately rewarding. I learned to adapt to unexpected issues, like weather delays and material shortages. The final mural brought so much joy to the community, which was the most fulfilling part.',
+      'Este proyecto me enseñó la importancia de una comunicación y planificación claras. Trabajar con un equipo diverso fue un reto, pero finalmente muy gratificante. Aprendí a adaptarme a problemas inesperados, como retrasos por el clima y escasez de materiales. El mural final trajo mucha alegría a la comunidad, que fue la parte más satisfactoria.',
     evidence: [
-        { id: 'ev-2', title: 'Painting the mural', type: 'image', url: evidenceImages.find(i=>i.id === 'evidence-2')?.imageUrl || '', date: new Date() },
-        { id: 'ev-1', title: 'Team planning', type: 'image', url: evidenceImages.find(i=>i.id === 'evidence-1')?.imageUrl || '', date: new Date() },
+        { id: 'ev-2', title: 'Pintando el mural', type: 'image', url: evidenceImages.find(i=>i.id === 'evidence-2')?.imageUrl || '', date: new Date() },
+        { id: 'ev-1', title: 'Planificación en equipo', type: 'image', url: evidenceImages.find(i=>i.id === 'evidence-1')?.imageUrl || '', date: new Date() },
     ],
-    progress: 'Completed',
+    progress: 'Completado',
+    timeEntries: [
+      { startTime: '2023-09-05T10:00:00Z', endTime: '2023-09-05T12:30:00Z' },
+      { startTime: '2023-09-12T10:00:00Z', endTime: '2023-09-12T13:00:00Z' },
+      { startTime: '2023-09-19T10:00:00Z', endTime: '2023-09-19T14:00:00Z' },
+    ]
   },
   {
     id: '2',
-    name: 'Charity 5K Run',
+    name: 'Carrera Benéfica de 5K',
     description:
-      'Participated in training for and completing a 5K run to raise funds for a local animal shelter. This involved a consistent training schedule and a fundraising campaign.',
-    category: 'Activity',
+      'Participé en el entrenamiento y la realización de una carrera de 5K para recaudar fondos para un refugio de animales local. Esto implicó un programa de entrenamiento constante y una campaña de recaudación de fondos.',
+    category: 'Actividad',
     startDate: new Date('2024-03-01'),
     endDate: new Date('2024-04-20'),
     learningOutcomes: [
-      'Identify own strengths and develop areas for growth',
-      'Show commitment to and perseverance in CAS experiences',
-      'Demonstrate engagement with issues of global significance',
+      'Identificar las propias fortalezas y desarrollar áreas de crecimiento',
+      'Mostrar compromiso y perseverancia en las experiencias CAS',
+      'Demostrar compromiso con cuestiones de importancia global',
     ],
     personalGoals:
-      'I want to improve my physical fitness and endurance. I also aim to develop my fundraising and advocacy skills to support a cause I care about.',
+      'Quiero mejorar mi condición física y resistencia. También pretendo desarrollar mis habilidades de recaudación de fondos y promoción para apoyar una causa que me importa.',
     reflections:
-      'The training was physically demanding, but I pushed through and saw significant improvement in my running times. It taught me discipline and perseverance. The fundraising aspect was new to me, and I learned how to effectively use social media to reach a wider audience. Crossing the finish line was a huge personal achievement.',
+      'El entrenamiento fue físicamente exigente, pero me esforcé y vi una mejora significativa en mis tiempos de carrera. Me enseñó disciplina y perseverancia. El aspecto de la recaudación de fondos era nuevo para mí y aprendí a usar eficazmente las redes sociales para llegar a un público más amplio. Cruzar la línea de meta fue un gran logro personal.',
     evidence: [
-      { id: 'ev-1', title: 'Fundraising progress', type: 'document', url: evidenceImages.find(i=>i.id === 'evidence-1')?.imageUrl || '', date: new Date() },
+      { id: 'ev-1', title: 'Progreso de la recaudación', type: 'document', url: evidenceImages.find(i=>i.id === 'evidence-1')?.imageUrl || '', date: new Date() },
     ],
-    progress: 'Completed',
+    progress: 'Completado',
+    timeEntries: [
+      { startTime: '2024-03-05T18:00:00Z', endTime: '2024-03-05T19:00:00Z' },
+      { startTime: '2024-03-07T18:00:00Z', endTime: '2024-03-07T19:15:00Z' },
+      { startTime: '2024-03-12T18:00:00Z', endTime: '2024-03-12T19:30:00Z' },
+    ]
   },
   {
     id: '3',
-    name: 'Coding for a Cause',
+    name: 'Programación con Causa',
     description:
-      'Worked with a team to develop a simple mobile app for a non-profit organization that helps track volunteer hours. The project involved learning a new programming language and collaborating remotely.',
-    category: 'Service',
+      'Trabajé con un equipo para desarrollar una aplicación móvil sencilla para una organización sin fines de lucro que ayuda a registrar las horas de voluntariado. El proyecto implicó aprender un nuevo lenguaje de programación y colaborar de forma remota.',
+    category: 'Servicio',
     startDate: new Date('2024-01-10'),
     endDate: new Date('2024-05-30'),
     learningOutcomes: [
-      'Demonstrate that challenges have been undertaken, developing new skills in the process',
-      'Demonstrate the skills and recognize the benefits of working collaboratively',
+      'Demostrar que se han afrontado retos, desarrollando nuevas habilidades en el proceso',
+      'Demostrar las habilidades y reconocer los beneficios del trabajo en equipo',
     ],
     personalGoals:
-      'To learn a new programming skill (React Native) and apply it to a real-world problem. I also want to experience working in an agile development team.',
+      'Aprender una nueva habilidad de programación (React Native) y aplicarla a un problema del mundo real. También quiero experimentar el trabajo en un equipo de desarrollo ágil.',
     reflections:
-      'Learning a new framework was challenging, but breaking down the problem into smaller tasks helped a lot. Remote collaboration required strong communication tools and regular check-ins. It was amazing to see how our technical skills could directly help an organization become more efficient. I am now more confident in my coding abilities.',
+      'Aprender un nuevo framework fue un reto, pero dividir el problema en tareas más pequeñas ayudó mucho. La colaboración remota requirió herramientas de comunicación sólidas y reuniones periódicas. Fue increíble ver cómo nuestras habilidades técnicas podían ayudar directamente a una organización a ser más eficiente. Ahora tengo más confianza en mis habilidades de programación.',
     evidence: [
-      { id: 'ev-4', title: 'Code on screen', type: 'image', url: evidenceImages.find(i=>i.id === 'evidence-4')?.imageUrl || '', date: new Date() },
-      { id: 'ev-3', title: 'Virtual team meeting', type: 'video', url: evidenceImages.find(i=>i.id === 'evidence-3')?.imageUrl || '', date: new Date() },
+      { id: 'ev-4', title: 'Código en pantalla', type: 'image', url: evidenceImages.find(i=>i.id === 'evidence-4')?.imageUrl || '', date: new Date() },
+      { id: 'ev-3', title: 'Reunión virtual de equipo', type: 'video', url: evidenceImages.find(i=>i.id === 'evidence-3')?.imageUrl || '', date: new Date() },
     ],
-    progress: 'In Progress',
+    progress: 'En curso',
+    timeEntries: [
+      { startTime: '2024-02-01T16:00:00Z', endTime: '2024-02-01T18:00:00Z' },
+      { startTime: '2024-02-08T16:00:00Z', endTime: '2024-02-08T18:30:00Z' },
+      { startTime: '2024-02-15T16:00:00Z', endTime: null },
+    ]
   },
 ];

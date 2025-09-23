@@ -1,13 +1,13 @@
-export type CASCategory = 'Creativity' | 'Activity' | 'Service';
+export type CASCategory = 'Creatividad' | 'Actividad' | 'Servicio';
 
 export const learningOutcomes = [
-  'Identify own strengths and develop areas for growth',
-  'Demonstrate that challenges have been undertaken, developing new skills in the process',
-  'Demonstrate how to initiate and plan a CAS experience',
-  'Show commitment to and perseverance in CAS experiences',
-  'Demonstrate the skills and recognize the benefits of working collaboratively',
-  'Demonstrate engagement with issues of global significance',
-  'Recognize and consider the ethics of choices and actions',
+  'Identificar las propias fortalezas y desarrollar áreas de crecimiento',
+  'Demostrar que se han afrontado retos, desarrollando nuevas habilidades en el proceso',
+  'Demostrar cómo iniciar y planificar una experiencia CAS',
+  'Mostrar compromiso y perseverancia en las experiencias CAS',
+  'Demostrar las habilidades y reconocer los beneficios del trabajo en equipo',
+  'Demostrar compromiso con cuestiones de importancia global',
+  'Reconocer y considerar la ética de las elecciones y acciones',
 ] as const;
 
 export type LearningOutcome = (typeof learningOutcomes)[number];
@@ -20,6 +20,11 @@ export type Evidence = {
   date: Date;
 };
 
+export type TimeEntry = {
+  startTime: string;
+  endTime: string | null;
+}
+
 export type Project = {
   id: string;
   name: string;
@@ -31,5 +36,6 @@ export type Project = {
   personalGoals: string;
   reflections: string;
   evidence: Evidence[];
-  progress: 'Planning' | 'In Progress' | 'Completed';
+  progress: 'Planificación' | 'En curso' | 'Completado';
+  timeEntries?: TimeEntry[];
 };

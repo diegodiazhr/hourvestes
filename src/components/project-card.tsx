@@ -12,21 +12,22 @@ import { Progress } from '@/components/ui/progress';
 import { CasCategoryIcon } from '@/components/cas-category-icon';
 import type { Project } from '@/lib/types';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 type Props = {
   project: Project;
 };
 
 const progressValues = {
-  Planning: 25,
-  'In Progress': 60,
-  Completed: 100,
+  Planificación: 25,
+  'En curso': 60,
+  Completado: 100,
 };
 
 const progressColors = {
-    Planning: 'bg-blue-400',
-    'In Progress': 'bg-yellow-400',
-    Completed: 'bg-green-500',
+    Planificación: 'bg-blue-400',
+    'En curso': 'bg-yellow-400',
+    Completado: 'bg-green-500',
 }
 
 export function ProjectCard({ project }: Props) {
@@ -49,9 +50,9 @@ export function ProjectCard({ project }: Props) {
               {project.category}
             </Badge>
           </div>
-          <CardDescription>
-            {format(project.startDate, 'MMM yyyy')} -{' '}
-            {project.progress === 'Completed' ? format(project.endDate, 'MMM yyyy') : 'Present'}
+          <CardDescription className="capitalize">
+            {format(project.startDate, 'MMM yyyy', { locale: es })} -{' '}
+            {project.progress === 'Completado' ? format(project.endDate, 'MMM yyyy', { locale: es }) : 'Actual'}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-grow">

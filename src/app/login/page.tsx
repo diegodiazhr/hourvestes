@@ -172,11 +172,13 @@ export default function LoginPage() {
         </div>
       <div className="hidden md:block relative">
         <Image
-          src="https://images.unsplash.com/photo-1519340333755-56e9c58d8393?q=80&w=1974&auto=format&fit=crop"
+          src="https://picsum.photos/seed/login/1200/1800"
           alt="Community work"
-          fill
-          className="object-cover rounded-l-2xl"
+          width={1200}
+          height={1800}
+          className="h-full w-full object-cover rounded-l-2xl"
           data-ai-hint="community service volunteering"
+          priority
         />
       </div>
     </div>

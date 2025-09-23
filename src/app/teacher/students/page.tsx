@@ -88,16 +88,13 @@ export default function MyStudentsPage({ userProfile }: { userProfile: UserProfi
     }, [userProfile]);
 
     const handleInvite = () => {
-        if(!userProfile || !userProfile.school) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Debes tener una institución educativa asignada para poder invitar alumnos.",
-            });
-            return;
-        };
-        const inviteLink = `https://studio-6718836827-4de5a.web.app/register?teacherId=${userProfile.id}&school=${encodeURIComponent(userProfile.school)}`;
+        if(!userProfile) return;
+
+        const schoolQueryParam = userProfile.school ? `&school=${encodeURIComponent(userProfile.school)}` : '';
+        const inviteLink = `https://studio-6718836827-4de5a.web.app/register?teacherId=${userProfile.id}${schoolQueryParam}`;
+        
         navigator.clipboard.writeText(inviteLink);
+
         toast({
             title: "¡Enlace de Invitación Copiado!",
             description: "Comparte este enlace con tus alumnos para que se registren y se vinculen a ti.",
@@ -126,7 +123,7 @@ export default function MyStudentsPage({ userProfile }: { userProfile: UserProfi
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="text-2xl font-bold font-headline">Mis Alumnos</CardTitle>
-                    <CardDescription>Visualiza y gestiona el progreso de tus alumnos de {userProfile?.school}.</CardDescription>
+                    <CardDescription>Visualiza y gestiona el progreso de tus alumnos{userProfile?.school ? ` de ${userProfile.school}` : ''}.</CardDescription>
                 </div>
                 <Button onClick={handleInvite}>
                     <UserPlus className="mr-2"/>

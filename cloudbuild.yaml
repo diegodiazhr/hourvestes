@@ -1,0 +1,12 @@
+steps:
+  # 1. Instalar dependencias del proyecto principal
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['install']
+    
+  # 2. Construir la aplicación Next.js
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['run', 'build']
+
+  # 3. Desplegar en Firebase Hosting y Functions
+  - name: 'gcr.io/firebase/firebase'
+    args: ['deploy', '--only', 'hosting,functions']

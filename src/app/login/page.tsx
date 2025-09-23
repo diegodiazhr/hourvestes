@@ -98,7 +98,7 @@ export default function LoginPage() {
                         Bienvenid@ de vuelta 👋
                     </h1>
                     <p className="text-muted-foreground">
-                        ¡Bienvenido a CAS Chronicle, donde podrás organizar todas tus actividades CAS en un solo click!
+                        ¡Bienvenido a HourVest, donde podrás organizar todas tus actividades en un solo click!
                     </p>
                 </div>
 
@@ -166,13 +166,13 @@ export default function LoginPage() {
                 </p>
 
                 <footer className="mt-12 text-center text-xs text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} - CAS Chronicle</p>
+                    <p>&copy; {new Date().getFullYear()} - HourVest</p>
                 </footer>
             </div>
         </div>
       <div className="hidden md:block relative">
         <Image
-          src="https://images.unsplash.com/photo-1519671843813-892215c8a666?q=80&w=1974&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-1519340333755-56e9c58d8393?q=80&w=1974&auto=format&fit=crop"
           alt="Community work"
           layout="fill"
           objectFit="cover"

@@ -24,7 +24,7 @@ export function Header() {
             className="flex items-center gap-2 text-xl font-bold font-headline text-primary hover:text-primary/80 transition-colors"
           >
             <BookOpenCheck className="h-6 w-6" />
-            <span>CAS Chronicle</span>
+            <span>HourVest</span>
           </Link>
           {user && (
             <div className="flex items-center gap-4">

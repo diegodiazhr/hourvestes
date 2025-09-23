@@ -112,7 +112,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md p-4">
         <div className="text-center mb-8">
             <BookOpenCheck className="h-10 w-10 mx-auto text-primary" />
-            <h1 className="text-3xl font-bold font-headline mt-2">CAS Chronicle</h1>
+            <h1 className="text-3xl font-bold font-headline mt-2">HourVest</h1>
             <p className="text-muted-foreground">Crea una cuenta para empezar</p>
         </div>
         <Card>

@@ -23,7 +23,7 @@ export function TimeTracker({ project }: { project: Project }) {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(project.timeEntries || []);
   const [isPending, setIsPending] = useState(false);
 
-  const activeEntry = timeEntries.find(entry => entry.endTime === null) || null;
+  const activeEntry = useMemo(() => timeEntries.find(entry => entry.endTime === null) || null, [timeEntries]);
   
   const totalTime = useMemo(() => {
     return timeEntries.reduce((acc, entry) => {
@@ -34,7 +34,7 @@ export function TimeTracker({ project }: { project: Project }) {
       }
       return acc;
     }, 0);
-  }, [timeEntries])
+  }, [timeEntries]);
 
 
   const [elapsedTime, setElapsedTime] = useState(0);

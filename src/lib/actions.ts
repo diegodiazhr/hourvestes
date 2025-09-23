@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { getFirebaseAdmin } from './firebase-admin';
 import { LearningOutcome } from './types';
 import { Timestamp } from 'firebase-admin/firestore';
+import { cookies } from 'next/headers';
 
 
 // Define the shape of the data coming from the form
@@ -23,25 +24,32 @@ const ProjectDataSchema = z.object({
 
 type ProjectData = z.infer<typeof ProjectDataSchema>;
 
-export async function createProjectAction(idToken: string, data: ProjectData) {
-  const { adminAuth, adminDb } = getFirebaseAdmin();
+async function getUserIdFromToken() {
+  const { adminAuth } = getFirebaseAdmin();
+  const token = cookies().get('fb-token')?.value;
 
-  if (!adminAuth || !adminDb) {
-    throw new Error('Firebase Admin SDK no inicializado. Revisa las variables de entorno del servidor.');
+  if (!token) {
+    throw new Error('Authentication token not found.');
   }
 
-  let uid: string;
   try {
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    uid = decodedToken.uid;
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    return decodedToken.uid;
   } catch (error) {
     console.error('Error verifying ID token:', error);
-    throw new Error('Token de autenticación inválido o expirado.');
+    throw new Error('Authentication token is invalid or expired.');
+  }
+}
+
+export async function createProjectAction(data: ProjectData) {
+  const { adminDb } = getFirebaseAdmin();
+  let uid: string;
+  try {
+     uid = await getUserIdFromToken();
+  } catch(e: any) {
+    throw e;
   }
 
-  if (!uid) {
-    throw new Error('No se pudo verificar el usuario. Debes iniciar sesión.');
-  }
 
   // Zod validation on the server
   const validatedFields = ProjectDataSchema.safeParse(data);
@@ -85,15 +93,27 @@ export async function updateTimeEntriesAction(projectId: string, timeEntries: an
   const projectRef = adminDb.collection('projects').doc(projectId);
   
   try {
+    // Before updating, we should verify the user owns this project.
+    const uid = await getUserIdFromToken();
+    const projectDoc = await projectRef.get();
+    if (!projectDoc.exists || projectDoc.data()?.userId !== uid) {
+      throw new Error('Permission denied. You do not own this project.');
+    }
+    
     await projectRef.update({
       timeEntries: timeEntries,
     });
+
     revalidatePath(`/projects/${projectId}`);
     revalidatePath(`/`);
   } catch (error) {
     console.error('Error updating time entries:', error);
+    if(error instanceof Error) {
+        throw error;
+    }
     throw new Error('No se pudieron actualizar las entradas de tiempo.');
   }
 }
+
 
 

@@ -102,7 +102,6 @@ export function ProjectForm() {
     setIsPending(true);
 
     try {
-        const idToken = await user.getIdToken();
         const projectData = {
           name: data.name,
           description: data.description,
@@ -115,7 +114,7 @@ export function ProjectForm() {
           personalGoals: data.personalGoals,
         };
         
-        await createProjectAction(idToken, projectData);
+        await createProjectAction(projectData);
         toast({
             title: "¡Proyecto Creado!",
             description: "Tu nuevo proyecto CAS ha sido guardado exitosamente.",

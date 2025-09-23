@@ -43,9 +43,11 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     if (user) {
-      getProjects().then(data => {
-        setProjects(data);
-        setProjectsLoading(false);
+      user.getIdToken().then(token => {
+        getProjects(token).then(data => {
+            setProjects(data);
+            setProjectsLoading(false);
+        });
       });
     }
   }, [user]);

@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "evidence-1",
+      "description": "Team meeting for planning the charity run.",
+      "imageUrl": "https://images.unsplash.com/photo-1568992687947-868a62a9f521?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0ZWFtJTIwbWVldGluZ3xlbnwwfHx8fDE3NTg1NzMzNzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "team meeting"
+    },
+    {
+      "id": "evidence-2",
+      "description": "Painting the mural at the community center.",
+      "imageUrl": "https://images.unsplash.com/photo-1615257390894-9b50b6ef6738?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwYWludGluZyUyMG11cmFsfGVufDB8fHx8MTc1ODYxOTc2OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "painting mural"
+    },
+    {
+      "id": "evidence-3",
+      "description": "Practicing for the school play.",
+      "imageUrl": "https://images.unsplash.com/photo-1681312206923-1fbd02c67260?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0aGVhdGVyJTIwcHJhY3RpY2V8ZW58MHx8fHwxNzU4NjE5NzY5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "theater practice"
+    },
+    {
+      "id": "evidence-4",
+      "description": "Documenting the code for our app.",
+      "imageUrl": "https://images.unsplash.com/photo-1742072593996-ebdc5d605a54?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Y29kaW5nJTIwc2NyZWVufGVufDB8fHx8MTc1ODYxOTc2OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "coding screen"
+    }
+  ]
 }

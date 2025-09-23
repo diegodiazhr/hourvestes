@@ -139,7 +139,7 @@ function InviteButton({ userProfile }: { userProfile: UserProfile | null }) {
             return;
         };
 
-        const baseUrl = 'https://studio-6718836827-4de5a.web.app';
+        const baseUrl = window.location.origin;
         const schoolQueryParam = userProfile.school
           ? `&school=${encodeURIComponent(userProfile.school)}`
           : '';

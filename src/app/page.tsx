@@ -1,6 +1,7 @@
 
 'use client';
-import { useAuth, DashboardSkeleton } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
+import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 import StudentDashboard from '@/components/student-dashboard';
 import TeacherDashboard from '@/components/teacher-dashboard';
 

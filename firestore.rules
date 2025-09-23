@@ -1,23 +1,14 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Users can read other user profiles (for names, etc.)
-    // but can only create/update their own.
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
     }
-
-    // A user can manage their own projects.
-    // A teacher can read projects of their students.
     match /projects/{projectId} {
-      allow read: if request.auth.uid == resource.data.userId || 
-                   (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor' &&
-                    get(/databases/$(database)/documents/users/$(resource.data.userId)).data.teacherId == request.auth.uid);
-      allow create: if request.auth.uid == request.resource.data.userId;
-      allow update, delete: if request.auth.uid == resource.data.userId;
+      allow read, update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
     }
   }
 }

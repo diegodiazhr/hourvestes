@@ -17,6 +17,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { EvidenceSection } from '@/components/evidence-section';
 import { ReflectionPrompts } from '@/components/reflection-prompts';
 import { TimeTracker } from '@/components/time-tracker';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export const revalidate = 0; // Revalidate this page on every request
 
@@ -30,6 +31,16 @@ export default async function ProjectDetailPage({
   if (!project) {
     notFound();
   }
+
+  // Use placeholder evidence for now
+  const evidence = PlaceHolderImages.map((img, index) => ({
+      id: img.id,
+      title: img.description,
+      url: img.imageUrl,
+      type: 'image' as 'image' | 'video' | 'document',
+      date: new Date(),
+  }));
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -121,7 +132,7 @@ export default async function ProjectDetailPage({
 
             <div className="space-y-8 sticky top-24">
               <TimeTracker project={project} />
-              <EvidenceSection evidence={project.evidence || []} />
+              <EvidenceSection evidence={evidence} />
               <ReflectionPrompts project={project} />
             </div>
           </div>

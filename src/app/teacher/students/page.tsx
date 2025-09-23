@@ -96,7 +96,7 @@ export default function MyStudentsPage({ userProfile }: { userProfile: UserProfi
             });
             return;
         };
-        const inviteLink = `${window.location.origin}/register?teacherId=${userProfile.id}&school=${encodeURIComponent(userProfile.school)}`;
+        const inviteLink = `https://studio-6718836827-4de5a.web.app/register?teacherId=${userProfile.id}&school=${encodeURIComponent(userProfile.school)}`;
         navigator.clipboard.writeText(inviteLink);
         toast({
             title: "¡Enlace de Invitación Copiado!",

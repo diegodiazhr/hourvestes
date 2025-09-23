@@ -100,21 +100,26 @@ export function ProjectForm() {
     }
     setIsPending(true);
 
-    const formData = new FormData();
-    formData.append('name', data.name);
-    formData.append('description', data.description);
-    formData.append('category', data.category!);
-    formData.append('dates', JSON.stringify({from: data.dates.from?.toISOString(), to: data.dates.to?.toISOString()}));
-    formData.append('learningOutcomes', data.learningOutcomes.join(','));
-    if(data.personalGoals) formData.append('personalGoals', data.personalGoals);
+    const projectData = {
+      name: data.name,
+      description: data.description,
+      category: data.category,
+      dates: {
+        from: data.dates.from.toISOString(),
+        to: data.dates.to?.toISOString(),
+      },
+      learningOutcomes: data.learningOutcomes,
+      personalGoals: data.personalGoals || '',
+    };
     
     try {
-        await createProjectAction(user.uid, formData);
+        await createProjectAction(user.uid, projectData);
         toast({
             title: "¡Proyecto Creado!",
             description: "Tu nuevo proyecto CAS ha sido guardado exitosamente.",
         });
     } catch(e) {
+        console.error(e);
         toast({
             title: "Error",
             description: "No se pudo crear el proyecto. Por favor, inténtalo de nuevo.",

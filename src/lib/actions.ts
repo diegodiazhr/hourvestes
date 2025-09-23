@@ -4,45 +4,33 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { collection, addDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
+import { CASCategory, LearningOutcome } from './types';
 
-const projectSchema = z.object({
-  name: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
-  description: z.string().min(10, { message: 'La descripción debe tener al menos 10 caracteres.' }),
+// Define the shape of the data coming from the form
+const ProjectDataSchema = z.object({
+  name: z.string().min(3),
+  description: z.string().min(10),
   category: z.enum(['Creatividad', 'Actividad', 'Servicio']),
   dates: z.object({
-      from: z.string().transform((str) => new Date(str)),
-      to: z.string().optional().transform((str) => str ? new Date(str) : undefined),
+      from: z.string(), // ISO string
+      to: z.string().optional(), // ISO string
   }),
-  learningOutcomes: z.string().min(1, { message: 'Debes seleccionar al menos un resultado de aprendizaje.'}).transform((str) => str.split(',')),
-  personalGoals: z.string().optional(),
+  learningOutcomes: z.array(z.string()),
+  personalGoals: z.string(),
 });
 
+type ProjectData = z.infer<typeof ProjectDataSchema>;
 
-export async function createProjectAction(userId: string, formData: FormData) {
+export async function createProjectAction(userId: string, data: ProjectData) {
   if (!userId) {
     throw new Error('Debes iniciar sesión para crear un proyecto.');
   }
 
-  const rawData = Object.fromEntries(formData);
-  const parsedDates = JSON.parse(rawData.dates as string);
-  
-  // Correctly construct the object for validation, without spreading rawData
-  const dataToValidate = {
-    name: rawData.name,
-    description: rawData.description,
-    category: rawData.category,
-    dates: {
-        from: parsedDates.from,
-        to: parsedDates.to,
-    },
-    learningOutcomes: rawData.learningOutcomes,
-    personalGoals: rawData.personalGoals,
-  };
-
-  const validatedFields = projectSchema.safeParse(dataToValidate);
+  // Zod validation on the server
+  const validatedFields = ProjectDataSchema.safeParse(data);
 
   if (!validatedFields.success) {
     console.error('Validation failed:', validatedFields.error.flatten().fieldErrors);
@@ -53,18 +41,18 @@ export async function createProjectAction(userId: string, formData: FormData) {
 
   try {
     await addDoc(collection(db, 'projects'), {
+      userId,
       name,
       description,
       category,
-      startDate: Timestamp.fromDate(dates.from),
-      endDate: dates.to ? Timestamp.fromDate(dates.to) : null,
-      learningOutcomes,
-      personalGoals: personalGoals || '',
+      startDate: Timestamp.fromDate(new Date(dates.from)),
+      endDate: dates.to ? Timestamp.fromDate(new Date(dates.to)) : null,
+      learningOutcomes: learningOutcomes as LearningOutcome[],
+      personalGoals,
       progress: 'Planificación',
       reflections: '',
       evidence: [],
       timeEntries: [],
-      userId: userId
     });
   } catch (error) {
     console.error("Error creating project:", error);
@@ -88,3 +76,5 @@ export async function updateTimeEntriesAction(projectId: string, timeEntries: an
         throw new Error('No se pudieron actualizar las entradas de tiempo.');
     }
 }
+
+    

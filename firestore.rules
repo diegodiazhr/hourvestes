@@ -1,14 +1,16 @@
-
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+      allow read: if request.auth.uid == userId;
+      allow create: if request.auth.uid != null;
     }
+
     match /projects/{projectId} {
-      allow read, update: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null;
+      allow read, update: if request.auth.uid == resource.data.userId;
+      // Simplified create rule: Only checks if the user is authenticated and is the owner of the new document.
+      allow create: if request.auth.uid != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }

@@ -278,7 +278,7 @@ export default function TeacherDashboard() {
                         ) : activities.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={3} className="h-24 text-center">
-                                    No hay actividades recientes.
+                                    Por ahora, aquí no hay nada :(
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -332,7 +332,13 @@ export default function TeacherDashboard() {
             {userProfile && <InviteButton teacherId={userProfile.id} schoolName={userProfile.school} />}
         </div>
         <div className="flex-1 space-y-3 overflow-auto">
-            {loading ? Array.from({length: 5}).map((_, i) => <div key={i} className="h-10 bg-muted rounded-md animate-pulse" />) : (
+            {loading ? (
+                Array.from({length: 5}).map((_, i) => <div key={i} className="h-10 bg-muted rounded-md animate-pulse" />)
+            ) : students.length === 0 ? (
+                <div className="text-center text-sm text-muted-foreground pt-8">
+                    <p>Por ahora, aquí no hay nada :(</p>
+                </div>
+            ) : (
                 students.map(student => (
                     <div key={student.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -357,3 +363,4 @@ export default function TeacherDashboard() {
     </div>
   );
 }
+

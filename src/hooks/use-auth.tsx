@@ -17,7 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
 });
 
-const publicRoutes = ['/login', '/register'];
+const publicRoutes = ['/login', '/register', '/'];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -43,17 +43,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!loading && !user && !publicRoutes.includes(pathname)) {
+    // If loading, don't do anything.
+    if (loading) return;
+
+    const isPublic = publicRoutes.some(route => pathname.startsWith(route));
+
+    // If the user is not logged in and not on a public route, redirect to login.
+    if (!user && !isPublic) {
       router.push('/login');
     }
-    if (!loading && user && publicRoutes.includes(pathname)) {
+
+    // If the user is logged in and on a public route (like login/register), redirect to home.
+    if (user && (pathname === '/login' || pathname === '/register')) {
       router.push('/');
     }
   }, [user, loading, pathname, router]);
 
+  const isPublic = publicRoutes.some(route => pathname.startsWith(route));
+
   return (
     <AuthContext.Provider value={{ user, userProfile, loading }}>
-      {loading && !publicRoutes.includes(pathname) ? <div className="flex items-center justify-center h-screen"><p>Cargando...</p></div> : children}
+      {loading && !isPublic ? <div className="flex items-center justify-center h-screen"><p>Cargando...</p></div> : children}
     </AuthContext.Provider>
   );
 };

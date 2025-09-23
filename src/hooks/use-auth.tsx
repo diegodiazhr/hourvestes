@@ -4,7 +4,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { getUserProfile, type UserProfile } from '@/lib/data';
-import { Skeleton } from '@/components/ui/skeleton';
+import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 
 interface AuthContextType {
   user: User | null;
@@ -19,24 +19,6 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const publicRoutes = ['/login', '/register'];
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-8 p-4 md:p-8">
-      <div className="flex justify-between items-center">
-        <Skeleton className="h-9 w-64 rounded-lg" />
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Skeleton className="h-28 rounded-lg" />
-        <Skeleton className="h-28 rounded-lg" />
-        <Skeleton className="h-28 rounded-lg" />
-        <Skeleton className="h-28 rounded-lg" />
-      </div>
-      <Skeleton className="h-96 rounded-lg" />
-    </div>
-  );
-}
-
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -70,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       router.push('/login');
     }
 
-    if (user && (pathname === '/login' || pathname === '/register')) {
+    if (user && isPublic) {
       router.push('/');
     }
   }, [user, loading, pathname, router]);

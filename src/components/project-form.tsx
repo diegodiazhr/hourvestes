@@ -36,6 +36,7 @@ import { createProjectAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { CasCategoryIcon } from './cas-category-icon';
 import { useState } from 'react';
+import { Label } from '@/components/ui/label';
 
 const projectFormSchema = z.object({
   name: z.string().min(3, {

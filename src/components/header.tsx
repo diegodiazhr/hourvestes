@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 
 export function Header() {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -28,9 +28,9 @@ export function Header() {
           </Link>
           {user && (
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground hidden sm:inline">
-                {user.email}
-              </span>
+                <span className="text-sm text-foreground hidden sm:inline">
+                    {userProfile?.name}
+                </span>
               <Button onClick={handleSignOut} variant="ghost" size="sm">
                 <LogOut className="mr-2 h-4 w-4" />
                 Cerrar Sesión
@@ -42,3 +42,5 @@ export function Header() {
     </header>
   );
 }
+
+    

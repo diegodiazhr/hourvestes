@@ -16,6 +16,10 @@ import {
   Search,
   Filter,
   Copy,
+  PanelLeftClose,
+  PanelRightClose,
+  PanelLeftOpen,
+  PanelRightOpen,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { onStudentsUpdate, getProjectsForStudent } from '@/lib/data';
@@ -86,8 +90,9 @@ function InviteButton({ teacherId, schoolName }: { teacherId: string, schoolName
     };
 
     return (
-        <Button onClick={handleInvite} size="icon" variant="ghost" className="h-8 w-8">
-            <PlusCircle className="h-5 w-5" />
+        <Button onClick={handleInvite}>
+            <Copy className="mr-2 h-4 w-4" />
+            Invitar Alumnos
         </Button>
     );
 }
@@ -100,6 +105,8 @@ export default function TeacherDashboard() {
   const [students, setStudents] = useState<(UserProfile & { totalHours: number })[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
   useEffect(() => {
     if (userProfile && userProfile.role === 'Profesor') {
@@ -135,7 +142,7 @@ export default function TeacherDashboard() {
         );
         
         const flattenedProjects = allProjects.flat();
-        flattenedProjects.sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+        flattenedProjects.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
         setActivities(flattenedProjects.slice(0, 5)); // Get 5 most recent
 
         setLoading(false);
@@ -167,10 +174,15 @@ export default function TeacherDashboard() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Left Sidebar */}
-      <nav className="hidden md:flex flex-col w-64 bg-card border-r p-4">
-        <div className="flex items-center gap-2 mb-8">
-            <HourvestLogo />
-            <h1 className="text-xl font-bold">HOURVEST</h1>
+      <nav className={`hidden md:flex flex-col bg-card border-r p-4 transition-all duration-300 ${isLeftSidebarOpen ? 'w-64' : 'w-0 p-0 overflow-hidden'}`}>
+        <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2">
+                <HourvestLogo />
+                <h1 className="text-xl font-bold">HOURVEST</h1>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setIsLeftSidebarOpen(false)}>
+                <PanelLeftClose className="h-5 w-5" />
+            </Button>
         </div>
 
         <div className="flex-1 space-y-4">
@@ -212,13 +224,27 @@ export default function TeacherDashboard() {
       {/* Main Content */}
       <main className="flex-1 p-8 overflow-auto">
         <header className="flex items-center justify-between mb-8">
-            <div className="relative w-full max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input placeholder="Buscar a un alumno..." className="pl-10" />
+            <div className="flex items-center gap-2">
+                {!isLeftSidebarOpen && (
+                    <Button variant="ghost" size="icon" onClick={() => setIsLeftSidebarOpen(true)}>
+                        <PanelLeftOpen className="h-5 w-5" />
+                    </Button>
+                )}
+                <div className="relative w-full max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input placeholder="Buscar a un alumno..." className="pl-10" />
+                </div>
             </div>
-            <Button variant="ghost" size="icon">
-                <Filter className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon">
+                    <Filter className="h-5 w-5" />
+                </Button>
+                 {!isRightSidebarOpen && (
+                    <Button variant="ghost" size="icon" onClick={() => setIsRightSidebarOpen(true)}>
+                        <PanelRightOpen className="h-5 w-5" />
+                    </Button>
+                )}
+            </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -257,7 +283,7 @@ export default function TeacherDashboard() {
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Actividades Publicadas Recientemente</h2>
-                <Link href="#" className="text-sm font-medium text-primary hover:underline">See All</Link>
+                <Link href="#" className="text-sm font-medium text-primary hover:underline">Ver todo</Link>
             </div>
             <Card>
                 <Table>
@@ -292,7 +318,7 @@ export default function TeacherDashboard() {
                                             </Avatar>
                                             <div>
                                                 <div className="font-medium">{activity.studentName}</div>
-                                                <div className="text-xs text-muted-foreground">{activity.startDate.toLocaleDateString()}</div>
+                                                <div className="text-xs text-muted-foreground">{new Date(activity.startDate).toLocaleDateString()}</div>
                                             </div>
                                         </div>
                                     </TableCell>
@@ -311,11 +337,11 @@ export default function TeacherDashboard() {
       </main>
 
       {/* Right Sidebar */}
-      <aside className="hidden lg:flex flex-col w-80 bg-card border-l p-6">
+      <aside className={`hidden lg:flex flex-col bg-card border-l p-6 transition-all duration-300 ${isRightSidebarOpen ? 'w-80' : 'w-0 p-0 overflow-hidden'}`}>
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-semibold">Your Profile</h2>
-            <Button variant="ghost" size="icon">
-                <MoreVertical className="h-5 w-5"/>
+            <Button variant="ghost" size="icon" onClick={() => setIsRightSidebarOpen(false)}>
+                <PanelRightClose className="h-5 w-5"/>
             </Button>
         </div>
 
@@ -329,7 +355,6 @@ export default function TeacherDashboard() {
         
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Mis Alumnos</h2>
-            {userProfile && <InviteButton teacherId={userProfile.id} schoolName={userProfile.school} />}
         </div>
         <div className="flex-1 space-y-3 overflow-auto">
             {loading ? (
@@ -358,9 +383,8 @@ export default function TeacherDashboard() {
                 ))
             )}
         </div>
-        <Button className="w-full mt-4 bg-primary/10 text-primary hover:bg-primary/20">Ver todos</Button>
+         {userProfile && <InviteButton teacherId={userProfile.id} schoolName={userProfile.school} />}
       </aside>
     </div>
   );
 }
-

@@ -1,3 +1,4 @@
+
 import type { Timestamp } from "firebase/firestore";
 
 export type CASCategory = 'Creatividad' | 'Actividad' | 'Servicio';
@@ -68,3 +69,5 @@ export type UserProfile = {
   school?: string;
   teacherId?: string;
 };
+
+export const GOAL_HOURS = 300;

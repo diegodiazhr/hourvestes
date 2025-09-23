@@ -1,3 +1,4 @@
+
 import { collection, getDocs, doc, getDoc, orderBy, query, where } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Project, ProjectDocument, UserProfile } from './types';
@@ -50,7 +51,26 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
             name: data.name,
             role: data.role,
             school: data.school,
+            teacherId: data.teacherId,
         }
     }
     return null;
+}
+
+export async function getStudentsForTeacher(teacherId: string): Promise<UserProfile[]> {
+    const usersCol = collection(db, 'users');
+    const q = query(usersCol, where('role', '==', 'Alumno'), where('teacherId', '==', teacherId));
+    const studentSnapshot = await getDocs(q);
+    const studentList = studentSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            email: data.email,
+            name: data.name,
+            role: data.role,
+            school: data.school,
+            teacherId: data.teacherId,
+        }
+    });
+    return studentList;
 }

@@ -3,6 +3,9 @@ import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
+// Explicitly load environment variables from .env file
+require('dotenv').config({ path: './.env' });
+
 // Define the structure for the service account from environment variables
 const serviceAccount = {
     type: "service_account",

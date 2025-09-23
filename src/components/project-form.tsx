@@ -113,7 +113,7 @@ export function ProjectForm() {
     };
     
     try {
-        await createProjectAction(user.uid, projectData);
+        await createProjectAction(projectData);
         toast({
             title: "¡Proyecto Creado!",
             description: "Tu nuevo proyecto CAS ha sido guardado exitosamente.",
@@ -333,5 +333,3 @@ export function ProjectForm() {
     </Form>
   );
 }
-
-    

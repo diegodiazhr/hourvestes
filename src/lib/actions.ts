@@ -7,7 +7,8 @@ import { z } from 'zod';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
-import { CASCategory, LearningOutcome } from './types';
+import { LearningOutcome } from './types';
+import { getSession } from './session';
 
 // Define the shape of the data coming from the form
 const ProjectDataSchema = z.object({
@@ -24,8 +25,10 @@ const ProjectDataSchema = z.object({
 
 type ProjectData = z.infer<typeof ProjectDataSchema>;
 
-export async function createProjectAction(userId: string, data: ProjectData) {
-  if (!userId) {
+export async function createProjectAction(data: ProjectData) {
+  const session = await getSession();
+
+  if (!session) {
     throw new Error('Debes iniciar sesión para crear un proyecto.');
   }
 
@@ -41,7 +44,7 @@ export async function createProjectAction(userId: string, data: ProjectData) {
 
   try {
     await addDoc(collection(db, 'projects'), {
-      userId,
+      userId: session.uid,
       name,
       description,
       category,
@@ -76,5 +79,3 @@ export async function updateTimeEntriesAction(projectId: string, timeEntries: an
         throw new Error('No se pudieron actualizar las entradas de tiempo.');
     }
 }
-
-    

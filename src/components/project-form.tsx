@@ -73,8 +73,8 @@ const defaultValues: Partial<ProjectFormValues> = {
   learningOutcomes: [],
   personalGoals: '',
   dates: {
-    from: new Date(),
-    to: new Date(new Date().setMonth(new Date().getMonth() + 1))
+    from: undefined,
+    to: undefined
   }
 };
 
@@ -93,8 +93,7 @@ export function ProjectForm() {
     formData.append('name', data.name);
     formData.append('description', data.description);
     formData.append('category', data.category!);
-    // @ts-ignore
-    formData.append('dates', JSON.stringify({from: data.dates.from.toISOString(), to: data.dates.to?.toISOString() || data.dates.from.toISOString()}));
+    formData.append('dates', JSON.stringify({from: data.dates.from?.toISOString(), to: data.dates.to?.toISOString()}));
     formData.append('learningOutcomes', data.learningOutcomes.join(','));
     if(data.personalGoals) formData.append('personalGoals', data.personalGoals);
     

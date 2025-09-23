@@ -14,7 +14,7 @@ const projectSchema = z.object({
   category: z.enum(['Creatividad', 'Actividad', 'Servicio']),
   dates: z.object({
       from: z.date(),
-      to: z.date(),
+      to: z.date().optional(),
   }),
   learningOutcomes: z.array(z.string()).min(1),
   personalGoals: z.string().optional(),
@@ -23,17 +23,20 @@ const projectSchema = z.object({
 export async function createProjectAction(formData: FormData) {
   const rawData = Object.fromEntries(formData);
   const parsedDates = JSON.parse(rawData.dates as string);
-  const validatedFields = projectSchema.safeParse({
+  
+  const dataToValidate = {
     name: rawData.name,
     description: rawData.description,
     category: rawData.category,
     dates: {
         from: new Date(parsedDates.from),
-        to: new Date(parsedDates.to),
+        to: parsedDates.to ? new Date(parsedDates.to) : undefined,
     },
     learningOutcomes: (rawData.learningOutcomes as string).split(','),
     personalGoals: rawData.personalGoals,
-  });
+  };
+
+  const validatedFields = projectSchema.safeParse(dataToValidate);
 
   if (!validatedFields.success) {
     console.error('Validation failed:', validatedFields.error.flatten().fieldErrors);
@@ -48,7 +51,7 @@ export async function createProjectAction(formData: FormData) {
       description,
       category,
       startDate: Timestamp.fromDate(dates.from),
-      endDate: Timestamp.fromDate(dates.to),
+      endDate: dates.to ? Timestamp.fromDate(dates.to) : Timestamp.fromDate(dates.from),
       learningOutcomes,
       personalGoals: personalGoals || '',
       progress: 'Planificación',

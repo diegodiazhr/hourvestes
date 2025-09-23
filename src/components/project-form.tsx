@@ -67,6 +67,9 @@ const projectFormSchema = z.object({
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
 const defaultValues: Partial<ProjectFormValues> = {
+  name: '',
+  description: '',
+  category: undefined,
   learningOutcomes: [],
   personalGoals: '',
   dates: {
@@ -89,7 +92,7 @@ export function ProjectForm() {
     const formData = new FormData();
     formData.append('name', data.name);
     formData.append('description', data.description);
-    formData.append('category', data.category);
+    formData.append('category', data.category!);
     // @ts-ignore
     formData.append('dates', JSON.stringify({from: data.dates.from.toISOString(), to: data.dates.to?.toISOString() || data.dates.from.toISOString()}));
     formData.append('learningOutcomes', data.learningOutcomes.join(','));

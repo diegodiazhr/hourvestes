@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
-
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -82,6 +82,7 @@ const defaultValues: Partial<ProjectFormValues> = {
 export function ProjectForm() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
 
   const form = useForm<ProjectFormValues>({
@@ -119,6 +120,7 @@ export function ProjectForm() {
             title: "¡Proyecto Creado!",
             description: "Tu nuevo proyecto CAS ha sido guardado exitosamente.",
         });
+        router.push('/');
     } catch(e: any) {
         console.error(e);
         toast({

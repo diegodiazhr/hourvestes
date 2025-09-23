@@ -2,7 +2,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
@@ -71,7 +70,6 @@ export async function createProjectAction(idToken: string, data: ProjectData) {
   }
 
   revalidatePath('/');
-  redirect('/');
 }
 
 export async function updateTimeEntriesAction(projectId: string, timeEntries: any[]) {

@@ -4,6 +4,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { getUserProfile, type UserProfile } from '@/lib/data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface AuthContextType {
   user: User | null;
@@ -17,7 +18,25 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
 });
 
-const publicRoutes = ['/login', '/register', '/'];
+const publicRoutes = ['/login', '/register'];
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-8 p-4 md:p-8">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-9 w-64 rounded-lg" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Skeleton className="h-28 rounded-lg" />
+        <Skeleton className="h-28 rounded-lg" />
+        <Skeleton className="h-28 rounded-lg" />
+        <Skeleton className="h-28 rounded-lg" />
+      </div>
+      <Skeleton className="h-96 rounded-lg" />
+    </div>
+  );
+}
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -43,27 +62,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    // If loading, don't do anything.
     if (loading) return;
 
     const isPublic = publicRoutes.some(route => pathname.startsWith(route));
 
-    // If the user is not logged in and not on a public route, redirect to login.
     if (!user && !isPublic) {
       router.push('/login');
     }
 
-    // If the user is logged in and on a public route (like login/register), redirect to home.
     if (user && (pathname === '/login' || pathname === '/register')) {
       router.push('/');
     }
   }, [user, loading, pathname, router]);
 
   const isPublic = publicRoutes.some(route => pathname.startsWith(route));
+  const isAppLoading = loading && !isPublic;
+
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading }}>
-      {loading && !isPublic ? <div className="flex items-center justify-center h-screen"><p>Cargando...</p></div> : children}
+      {isAppLoading ? <DashboardSkeleton /> : children}
     </AuthContext.Provider>
   );
 };

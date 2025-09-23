@@ -174,9 +174,8 @@ export default function LoginPage() {
         <Image
           src="https://images.unsplash.com/photo-1519340333755-56e9c58d8393?q=80&w=1974&auto=format&fit=crop"
           alt="Community work"
-          layout="fill"
-          objectFit="cover"
-          className="rounded-l-2xl"
+          fill
+          className="object-cover rounded-l-2xl"
           data-ai-hint="community service volunteering"
         />
       </div>

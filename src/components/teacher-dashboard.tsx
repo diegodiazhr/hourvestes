@@ -70,7 +70,7 @@ export default function TeacherDashboard() {
             </Card>
         </div>
         
-        <MyStudentsPage />
+        {userProfile && <MyStudentsPage userProfile={userProfile} />}
 
       </main>
     </div>

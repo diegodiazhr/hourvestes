@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { getStudentsForTeacher, getProjectsForStudent } from '@/lib/data';
-import { useAuth } from '@/hooks/use-auth';
 import type { UserProfile, Project, TimeEntry } from '@/lib/types';
 import { GOAL_HOURS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -66,8 +65,7 @@ function StudentsListSkeleton() {
     )
 }
 
-export default function MyStudentsPage() {
-    const { userProfile } = useAuth();
+export default function MyStudentsPage({ userProfile }: { userProfile: UserProfile }) {
     const { toast } = useToast();
     const [students, setStudents] = useState<(UserProfile & { totalHours: number })[]>([]);
     const [loading, setLoading] = useState(true);

@@ -1,4 +1,3 @@
-
 import type { Timestamp } from "firebase/firestore";
 
 export type CASCategory = 'Creatividad' | 'Actividad' | 'Servicio';
@@ -41,6 +40,7 @@ export type Project = {
   evidence: Evidence[];
   progress: 'Planificación' | 'En curso' | 'Completado';
   timeEntries?: TimeEntry[];
+  userId: string;
 };
 
 export type ProjectDocument = {
@@ -55,4 +55,16 @@ export type ProjectDocument = {
   evidence: Evidence[];
   progress: 'Planificación' | 'En curso' | 'Completado';
   timeEntries?: TimeEntry[];
+  userId: string;
+};
+
+export type UserRole = 'Alumno' | 'Profesor';
+
+export type UserProfile = {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  school?: string;
+  teacherId?: string;
 };

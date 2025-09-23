@@ -1,4 +1,4 @@
-
+'use client';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,10 +6,50 @@ import { Header } from '@/components/header';
 import { ProjectCard } from '@/components/project-card';
 import { getProjects } from '@/lib/data';
 import { TimeSummaryChart } from '@/components/time-summary-chart';
+import { useAuth } from '@/hooks/use-auth';
+import { useEffect, useState } from 'react';
+import type { Project } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default async function Home() {
-  const projects = await getProjects();
-  
+function ProjectsSkeleton() {
+  return (
+    <div className="grid gap-8 lg:grid-cols-3">
+      <div className="lg:col-span-2 grid gap-6 md:grid-cols-2">
+        <Skeleton className="h-48 rounded-lg" />
+        <Skeleton className="h-48 rounded-lg" />
+      </div>
+      <div className="lg:col-span-1">
+        <Skeleton className="h-64 rounded-lg" />
+      </div>
+    </div>
+  )
+}
+
+export default function Home() {
+  const { user, loading } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      getProjects().then(data => {
+        setProjects(data);
+        setProjectsLoading(false);
+      });
+    }
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 container mx-auto p-4 md:p-8">
+           <ProjectsSkeleton />
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -24,27 +64,29 @@ export default async function Home() {
             </Link>
           </Button>
         </div>
-        {projects.length > 0 ? (
-          <div className="grid gap-8 lg:grid-cols-3">
-             <div className="lg:col-span-2 grid gap-6 md:grid-cols-2">
-                {projects.map(project => (
-                  <ProjectCard key={project.id} project={project} />
-                ))}
-              </div>
-              <div className="lg:col-span-1">
-                <TimeSummaryChart projects={projects} />
-              </div>
-          </div>
-        ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <h2 className="text-xl font-semibold text-muted-foreground">Aún no hay proyectos.</h2>
-            <p className="text-muted-foreground mt-2">Comienza creando tu primer proyecto CAS.</p>
-            <Button asChild className="mt-4">
-              <Link href="/projects/new">
-                <PlusCircle className="mr-2 h-4 w-4" /> Crear Proyecto
-              </Link>
-            </Button>
-          </div>
+        {projectsLoading ? <ProjectsSkeleton /> : (
+           projects.length > 0 ? (
+            <div className="grid gap-8 lg:grid-cols-3">
+               <div className="lg:col-span-2 grid gap-6 md:grid-cols-2">
+                  {projects.map(project => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))}
+                </div>
+                <div className="lg:col-span-1">
+                  <TimeSummaryChart projects={projects} />
+                </div>
+            </div>
+          ) : (
+            <div className="text-center py-16 border-2 border-dashed rounded-lg">
+              <h2 className="text-xl font-semibold text-muted-foreground">Aún no hay proyectos.</h2>
+              <p className="text-muted-foreground mt-2">Comienza creando tu primer proyecto CAS.</p>
+              <Button asChild className="mt-4">
+                <Link href="/projects/new">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Crear Proyecto
+                </Link>
+              </Button>
+            </div>
+          )
         )}
       </main>
     </div>

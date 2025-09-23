@@ -1,12 +1,12 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db } from './firebase';
+import { collection, addDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { db, auth } from './firebase';
 import { Timestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
@@ -22,6 +22,11 @@ const projectSchema = z.object({
 
 
 export async function createProjectAction(formData: FormData) {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('Debes iniciar sesión para crear un proyecto.');
+  }
+
   const rawData = Object.fromEntries(formData);
   const parsedDates = JSON.parse(rawData.dates as string);
   
@@ -56,6 +61,7 @@ export async function createProjectAction(formData: FormData) {
       reflections: '',
       evidence: [],
       timeEntries: [],
+      userId: user.uid
     });
   } catch (error) {
     console.error("Error creating project:", error);

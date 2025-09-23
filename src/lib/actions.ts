@@ -3,11 +3,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
 import { LearningOutcome } from './types';
-import { adminAuth } from './firebase-admin';
+import { adminAuth, adminDb } from './firebase-admin';
 
 // Define the shape of the data coming from the form
 const ProjectDataSchema = z.object({
@@ -25,17 +25,21 @@ const ProjectDataSchema = z.object({
 type ProjectData = z.infer<typeof ProjectDataSchema>;
 
 export async function createProjectAction(idToken: string, data: ProjectData) {
+  if (!adminAuth || !adminDb) {
+    throw new Error('Firebase Admin SDK no inicializado. Revisa las variables de entorno del servidor.');
+  }
+
   let uid: string;
   try {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     uid = decodedToken.uid;
   } catch (error) {
     console.error('Error verifying ID token:', error);
-    throw new Error('Debes iniciar sesión para crear un proyecto.');
+    throw new Error('Token de autenticación inválido o expirado.');
   }
 
   if (!uid) {
-    throw new Error('Debes iniciar sesión para crear un proyecto.');
+    throw new Error('No se pudo verificar el usuario. Debes iniciar sesión.');
   }
 
   // Zod validation on the server

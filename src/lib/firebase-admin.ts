@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth, Auth } from 'firebase-admin/auth';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 const serviceAccount = {
     "type": "service_account",
@@ -16,27 +16,30 @@ const serviceAccount = {
     "client_x509_cert_url": process.env.FIREBASE_CLIENT_X509_CERT_URL
 };
 
-function initFirebaseAdmin(): App {
-  // Evita que la app crashee en el build si las variables de entorno no están presentes.
+let adminApp: App | null = null;
+let adminAuth: Auth | null = null;
+let adminDb: Firestore | null = null;
+
+function initFirebaseAdmin() {
   if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
     console.warn(
-      'Firebase Admin SDK non-initialized. Service account environment variables are missing.'
+      'Firebase Admin SDK not initialized. Service account environment variables are missing.'
     );
-    // Return a dummy app or handle it gracefully, but for server actions, we need it.
-    // In a build process, this might be ok, but not for runtime.
-    // Throwing an error might be better in some cases.
-    throw new Error('Missing Firebase Admin credentials. Cannot initialize Admin SDK.');
+    return;
   }
 
   if (getApps().length) {
-    return getApps()[0];
+    adminApp = getApps()[0];
+  } else {
+    adminApp = initializeApp({
+      credential: cert(serviceAccount as any),
+    });
   }
   
-  return initializeApp({
-    credential: cert(serviceAccount as any),
-  });
+  adminAuth = getAuth(adminApp);
+  adminDb = getFirestore(adminApp);
 };
 
-export const adminApp = initFirebaseAdmin();
-export const adminAuth = getAuth(adminApp);
-export const adminDb = getFirestore(adminApp);
+initFirebaseAdmin();
+
+export { adminApp, adminAuth, adminDb };

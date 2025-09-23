@@ -1,9 +1,8 @@
 
 'use client';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, DashboardSkeleton } from '@/hooks/use-auth';
 import StudentDashboard from '@/components/student-dashboard';
 import TeacherDashboard from '@/components/teacher-dashboard';
-import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 
 export default function Home() {
   const { userProfile, loading } = useAuth();

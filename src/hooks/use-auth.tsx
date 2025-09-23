@@ -4,7 +4,6 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { getUserProfile, type UserProfile } from '@/lib/data';
-import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 
 interface AuthContextType {
   user: User | null;
@@ -50,22 +49,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (!user && !isPublic) {
       router.push('/login');
-    }
-
-    if (user && isPublic) {
+    } else if (user && isPublic) {
       router.push('/');
     }
   }, [user, loading, pathname, router]);
 
   const isPublic = publicRoutes.some(route => pathname.startsWith(route));
-  const isAppLoading = loading && !isPublic;
 
+  if (loading && !isPublic) {
+    return <DashboardSkeleton />;
+  }
+  
+  if (!user && isPublic) {
+    return <>{children}</>;
+  }
+
+  if(!user && !isPublic) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading }}>
-      {isAppLoading ? <DashboardSkeleton /> : children}
+        {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+export function DashboardSkeleton() {
+    return (
+      <div className="space-y-8 p-4 md:p-8">
+        <div className="flex justify-between items-center">
+          <div className="h-9 w-64 rounded-lg bg-muted animate-pulse" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="h-28 rounded-lg bg-muted animate-pulse" />
+          <div className="h-28 rounded-lg bg-muted animate-pulse" />
+          <div className="h-28 rounded-lg bg-muted animate-pulse" />
+          <div className="h-28 rounded-lg bg-muted animate-pulse" />
+        </div>
+        <div className="h-96 rounded-lg bg-muted animate-pulse" />
+      </div>
+    );
+  }
+  
+  

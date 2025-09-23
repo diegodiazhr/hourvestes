@@ -68,6 +68,7 @@ type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
 const defaultValues: Partial<ProjectFormValues> = {
   learningOutcomes: [],
+  personalGoals: '',
   dates: {
     from: new Date(),
     to: new Date(new Date().setMonth(new Date().getMonth() + 1))

@@ -1,30 +1,30 @@
 
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getFirestore, Firestore } from "firebase/firestore";
-import { getAuth, Auth } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getAuth, type Auth } from "firebase/auth";
 
-// This config is guaranteed to work in this environment.
 const firebaseConfig = {
-  "projectId": "studio-6718836827-4de5a",
-  "appId": "1:577171585378:web:740c8bbd265d2f36f0143b",
-  "apiKey": "AIzaSyAFMYISF-g2onEeORtvwVxaoONyiHJupl0",
-  "authDomain": "studio-6718836827-4de5a.firebaseapp.com",
-  "measurementId": "G-ZP3WVY5QMQ",
-  "messagingSenderId": "577171585378"
+    "projectId": "studio-6718836827-4de5a",
+    "appId": "1:577171585378:web:740c8bbd265d2f36f0143b",
+    "apiKey": "AIzaSyAFMYISF-g2onEeORtvwVxaoONyiHJupl0",
+    "authDomain": "studio-6718836827-4de5a.firebaseapp.com",
+    "measurementId": "G-ZP3WVY5QMQ",
+    "messagingSenderId": "577171585378"
 };
 
-
-// Initialize Firebase only on the client side
 let app: FirebaseApp;
-let db: Firestore;
 let auth: Auth;
+let db: Firestore;
 
 if (typeof window !== 'undefined') {
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    db = getFirestore(app);
-    auth = getAuth(app);
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
+  auth = getAuth(app);
+  db = getFirestore(app);
 }
 
-// @ts-ignore db and auth will be defined on the client.
-export { app, db, auth };
+// @ts-ignore: app, auth, and db will be defined on the client.
+export { app, auth, db };

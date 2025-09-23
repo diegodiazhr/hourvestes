@@ -1,23 +1,18 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users Collection
-    match /users/{userId} {
-      // Any authenticated user can read user profiles.
-      // Needed for teachers to see student info.
-      allow read: if request.auth != null;
-      // Only the user themselves can create or update their own profile.
-      allow create, update: if request.auth.uid == userId;
+    
+    match /projects/{projectId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    // Projects Collection
-    match /projects/{projectId} {
-      // Any authenticated user can create a project.
-      allow create: if request.auth != null;
-      // Only the user associated with a project can read or update it.
-      allow read, update: if request.auth.uid == resource.data.userId;
+    match /users/{userId} {
+      // Los usuarios pueden leer perfiles si están autenticados (necesario para que los profesores vean a sus alumnos).
+      allow read: if request.auth != null;
+      // Los usuarios solo pueden actualizar su propio perfil.
+      allow update: if request.auth.uid == userId;
     }
   }
 }

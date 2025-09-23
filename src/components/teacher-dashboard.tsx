@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, BarChart2, CheckCircle, UserPlus, Link } from 'lucide-react';
+import { Users, BarChart2, CheckCircle, UserPlus } from 'lucide-react';
 import StudentsList from '@/components/students-list';
-import { getStudentsForTeacher, getProjectsForStudent } from '@/lib/data';
-import type { UserProfile, Project } from '@/lib/types';
+import { onStudentsUpdate, getProjectsForStudent } from '@/lib/data';
+import type { UserProfile } from '@/lib/types';
 import { GOAL_HOURS } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,7 +19,8 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     if (userProfile && userProfile.role === 'Profesor') {
-      getStudentsForTeacher(userProfile).then(async (studentProfiles) => {
+      const unsubscribe = onStudentsUpdate(userProfile, async (studentProfiles) => {
+        setLoading(true);
         const studentsWithHours = await Promise.all(
           studentProfiles.map(async (student) => {
             const projects = await getProjectsForStudent(student.id);
@@ -42,7 +43,10 @@ export default function TeacherDashboard() {
         setStudents(studentsWithHours);
         setLoading(false);
       });
+      // Devuelve la función de limpieza para cancelar la suscripción cuando el componente se desmonte
+      return () => unsubscribe();
     } else if (userProfile) {
+      // Si el usuario no es un profesor, simplemente deja de cargar
       setLoading(false);
     }
   }, [userProfile]);

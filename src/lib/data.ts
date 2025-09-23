@@ -1,5 +1,5 @@
 
-import { collection, getDocs, doc, getDoc, orderBy, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, orderBy, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Project, ProjectDocument, UserProfile } from './types';
 import { auth } from './firebase';
@@ -55,31 +55,35 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     return null;
 }
 
-export async function getStudentsForTeacher(teacherProfile: UserProfile): Promise<UserProfile[]> {
+export function onStudentsUpdate(teacherProfile: UserProfile, callback: (students: UserProfile[]) => void) {
     if (teacherProfile.role !== 'Profesor') {
-        return [];
+      callback([]);
+      return () => {}; // Devuelve una función vacía para cancelar la suscripción
     }
-
+  
     const usersCol = collection(db, 'users');
     const q = query(
-        usersCol, 
-        where('role', '==', 'Alumno'), 
-        where('teacherId', '==', teacherProfile.id)
+      usersCol,
+      where('role', '==', 'Alumno'),
+      where('teacherId', '==', teacherProfile.id)
     );
-
-    const studentSnapshot = await getDocs(q);
-    const studentList = studentSnapshot.docs.map(doc => {
+  
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const studentList = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
-            id: doc.id,
-            email: data.email,
-            name: data.name,
-            role: data.role,
-            school: data.school,
-            teacherId: data.teacherId,
-        }
+          id: doc.id,
+          email: data.email,
+          name: data.name,
+          role: data.role,
+          school: data.school,
+          teacherId: data.teacherId,
+        };
+      });
+      callback(studentList);
     });
-    return studentList;
+  
+    return unsubscribe; // Devuelve la función para cancelar la suscripción
 }
 
 // This function is intended to be called from a teacher's context,
@@ -96,3 +100,4 @@ export async function getProjectsForStudent(studentId: string): Promise<Project[
     });
     return projectList;
 }
+

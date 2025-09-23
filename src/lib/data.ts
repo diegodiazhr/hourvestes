@@ -56,7 +56,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 }
 
 export async function getStudentsForTeacher(teacherProfile: UserProfile): Promise<UserProfile[]> {
-    if (teacherProfile.role !== 'Profesor' || !teacherProfile.school) {
+    if (teacherProfile.role !== 'Profesor') {
         return [];
     }
 
@@ -64,8 +64,7 @@ export async function getStudentsForTeacher(teacherProfile: UserProfile): Promis
     const q = query(
         usersCol, 
         where('role', '==', 'Alumno'), 
-        where('teacherId', '==', teacherProfile.id),
-        where('school', '==', teacherProfile.school)
+        where('teacherId', '==', teacherProfile.id)
     );
 
     const studentSnapshot = await getDocs(q);

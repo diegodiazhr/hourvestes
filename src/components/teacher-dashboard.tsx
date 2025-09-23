@@ -1,15 +1,63 @@
 
 'use client';
-import Link from 'next/link';
+import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, BarChart2, UserPlus, CheckCircle } from 'lucide-react';
+import { Users, BarChart2, CheckCircle, UserPlus, Link } from 'lucide-react';
 import MyStudentsPage from '@/app/teacher/students/page';
+import { getStudentsForTeacher, getProjectsForStudent } from '@/lib/data';
+import type { UserProfile, Project } from '@/lib/types';
+import { GOAL_HOURS } from '@/lib/types';
 
 export default function TeacherDashboard() {
   const { userProfile } = useAuth();
+  const [students, setStudents] = useState<(UserProfile & { totalHours: number })[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (userProfile && userProfile.role === 'Profesor') {
+      getStudentsForTeacher(userProfile).then(async (studentProfiles) => {
+        const studentsWithHours = await Promise.all(
+          studentProfiles.map(async (student) => {
+            const projects = await getProjectsForStudent(student.id);
+            const totalMilliseconds = projects.reduce((acc, project) => {
+                const projectTime =
+                  project.timeEntries?.reduce((timeAcc, entry) => {
+                    if (entry.endTime) {
+                      const start = new Date(entry.startTime).getTime();
+                      const end = new Date(entry.endTime).getTime();
+                      return timeAcc + (end - start);
+                    }
+                    return timeAcc;
+                  }, 0) || 0;
+                return acc + projectTime;
+              }, 0);
+            const totalHours = totalMilliseconds / (1000 * 60 * 60);
+            return { ...student, totalHours };
+          })
+        );
+        setStudents(studentsWithHours);
+        setLoading(false);
+      });
+    } else if (userProfile) {
+      setLoading(false);
+    }
+  }, [userProfile]);
+
+  const stats = useMemo(() => {
+    const totalStudents = students.length;
+    const studentsCompleted = students.filter(s => s.totalHours >= GOAL_HOURS).length;
+    const totalHours = students.reduce((acc, s) => acc + s.totalHours, 0);
+    const averageProgress = totalStudents > 0 ? (totalHours / (totalStudents * GOAL_HOURS)) * 100 : 0;
+
+    return {
+      totalStudents,
+      studentsCompleted,
+      averageProgress: Math.min(averageProgress, 100)
+    }
+  }, [students]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -31,7 +79,7 @@ export default function TeacherDashboard() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">12</div>
+                    <div className="text-2xl font-bold">{loading ? '...' : stats.totalStudents}</div>
                     <p className="text-xs text-muted-foreground">Alumnos vinculados a tu cuenta</p>
                 </CardContent>
             </Card>
@@ -41,7 +89,7 @@ export default function TeacherDashboard() {
                     <BarChart2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">45%</div>
+                    <div className="text-2xl font-bold">{loading ? '...' : `${stats.averageProgress.toFixed(0)}%`}</div>
                     <p className="text-xs text-muted-foreground">del total de horas CAS completado</p>
                 </CardContent>
             </Card>
@@ -51,7 +99,7 @@ export default function TeacherDashboard() {
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">2</div>
+                    <div className="text-2xl font-bold">{loading ? '...' : stats.studentsCompleted}</div>
                     <p className="text-xs text-muted-foreground">han alcanzado la meta de horas</p>
                 </CardContent>
             </Card>
@@ -60,19 +108,49 @@ export default function TeacherDashboard() {
                     <CardTitle className="text-sm font-medium">Invitar Alumno</CardTitle>
                     <UserPlus className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                    <Button asChild className="w-full">
-                        <Link href="/teacher/students">
-                            <UserPlus className="mr-2" /> Ir a Invitaciones
-                        </Link>
-                    </Button>
+                <CardContent className="pt-6">
+                    <MyStudentsPage.InviteButton userProfile={userProfile} />
                 </CardContent>
             </Card>
         </div>
         
-        {userProfile && <MyStudentsPage userProfile={userProfile} />}
+        <MyStudentsPage 
+            students={students} 
+            loading={loading} 
+            userProfile={userProfile} 
+        />
 
       </main>
     </div>
   );
 }
+
+function InviteButton({ userProfile }: { userProfile: UserProfile | null }) {
+    const { toast } = useToast();
+
+    const handleInvite = () => {
+        if (!userProfile) return;
+
+        const baseUrl = 'https://studio-6718836827-4de5a.web.app';
+        const schoolQueryParam = userProfile.school
+          ? `&school=${encodeURIComponent(userProfile.school)}`
+          : '';
+        const inviteLink = `${baseUrl}/register?teacherId=${userProfile.id}${schoolQueryParam}`;
+        
+        navigator.clipboard.writeText(inviteLink);
+
+        toast({
+            title: "¡Enlace de Invitación Copiado!",
+            description: "Comparte este enlace con tus alumnos para que se registren y se vinculen a ti.",
+        });
+    };
+    
+    return (
+        <Button onClick={handleInvite} className="w-full">
+            <UserPlus className="mr-2"/>
+            Copiar Enlace de Invitación
+        </Button>
+    )
+}
+
+MyStudentsPage.InviteButton = InviteButton;

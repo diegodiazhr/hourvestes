@@ -2,15 +2,14 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { getStudentsForTeacher, getProjectsForStudent } from '@/lib/data';
-import type { UserProfile, Project, TimeEntry } from '@/lib/types';
+import type { UserProfile, Project } from '@/lib/types';
 import { GOAL_HOURS } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Copy } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 function StudentProgressCard({ student }: { student: UserProfile & { totalHours: number } }) {
@@ -65,70 +64,21 @@ function StudentsListSkeleton() {
     )
 }
 
-export default function MyStudentsPage({ userProfile }: { userProfile: UserProfile }) {
-    const { toast } = useToast();
-    const [students, setStudents] = useState<(UserProfile & { totalHours: number })[]>([]);
-    const [loading, setLoading] = useState(true);
+interface MyStudentsPageProps {
+    userProfile: UserProfile | null;
+    students: (UserProfile & { totalHours: number })[];
+    loading: boolean;
+}
 
-    useEffect(() => {
-        if (userProfile && userProfile.role === 'Profesor' && userProfile.school) {
-            getStudentsForTeacher(userProfile).then(async (studentProfiles) => {
-                const studentsWithHours = await Promise.all(studentProfiles.map(async (student) => {
-                    const projects = await getProjectsForStudent(student.id);
-                    const totalHours = calculateTotalHours(projects);
-                    return { ...student, totalHours };
-                }));
-
-                setStudents(studentsWithHours);
-                setLoading(false);
-            });
-        } else if (userProfile) {
-            setLoading(false);
-        }
-    }, [userProfile]);
-
-    const handleInvite = () => {
-        if(!userProfile) return;
-
-        const schoolQueryParam = userProfile.school ? `&school=${encodeURIComponent(userProfile.school)}` : '';
-        const inviteLink = `https://studio-6718836827-4de5a.web.app/register?teacherId=${userProfile.id}${schoolQueryParam}`;
-        
-        navigator.clipboard.writeText(inviteLink);
-
-        toast({
-            title: "¡Enlace de Invitación Copiado!",
-            description: "Comparte este enlace con tus alumnos para que se registren y se vinculen a ti.",
-        });
-    };
-
-    const calculateTotalHours = (projects: Project[]) => {
-        const totalMilliseconds = projects.reduce((acc, project) => {
-          const projectTime =
-            project.timeEntries?.reduce((timeAcc, entry) => {
-              if (entry.endTime) {
-                const start = new Date(entry.startTime).getTime();
-                const end = new Date(entry.endTime).getTime();
-                return timeAcc + (end - start);
-              }
-              return timeAcc;
-            }, 0) || 0;
-          return acc + projectTime;
-        }, 0);
-        return totalMilliseconds / (1000 * 60 * 60);
-    }
-
+export default function MyStudentsPage({ userProfile, students, loading }: MyStudentsPageProps) {
 
     return (
         <Card className="mt-8">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader>
                 <div>
                     <CardTitle className="text-2xl font-bold font-headline">Mis Alumnos</CardTitle>
                     <CardDescription>Visualiza y gestiona el progreso de tus alumnos{userProfile?.school ? ` de ${userProfile.school}` : ''}.</CardDescription>
                 </div>
-                <Button onClick={handleInvite}>
-                    <UserPlus className="mr-2"/>
-                    Invitar Alumnos
-                </Button>
             </CardHeader>
             <CardContent>
                 {loading ? <StudentsListSkeleton /> : (

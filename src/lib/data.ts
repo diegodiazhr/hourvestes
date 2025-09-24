@@ -3,8 +3,6 @@
 import { collection, getDocs, doc, getDoc, orderBy, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Project, ProjectDocument, UserProfile } from './types';
-import { getFirebaseAdmin } from './firebase-admin';
-import { cookies } from 'next/headers';
 
 function docToProject(doc: ProjectDocument, id: string): Project {
     return {
@@ -15,29 +13,10 @@ function docToProject(doc: ProjectDocument, id: string): Project {
     };
 }
 
-async function getUserIdFromToken(idToken?: string): Promise<string> {
-    const { adminAuth } = getFirebaseAdmin();
-    const token = idToken || cookies().get('fb-token')?.value;
 
-    if (!token) {
-        throw new Error('Authentication token not found.');
-    }
-
-    try {
-        const decodedToken = await adminAuth.verifyIdToken(token);
-        return decodedToken.uid;
-    } catch (error) {
-        console.error('Error verifying ID token:', error);
-        throw new Error('Authentication token is invalid or expired.');
-    }
-}
-
-
-export async function getProjects(idToken: string): Promise<Project[]> {
-    const uid = await getUserIdFromToken(idToken);
-
+export async function getProjects(userId: string): Promise<Project[]> {
     const projectsCol = collection(db, 'projects');
-    const q = query(projectsCol, where('userId', '==', uid), orderBy('startDate', 'desc'));
+    const q = query(projectsCol, where('userId', '==', userId), orderBy('startDate', 'desc'));
     const projectSnapshot = await getDocs(q);
     const projectList = projectSnapshot.docs.map(doc => {
         const data = doc.data() as ProjectDocument;

@@ -114,6 +114,3 @@ export async function updateTimeEntriesAction(projectId: string, timeEntries: an
     throw new Error('No se pudieron actualizar las entradas de tiempo.');
   }
 }
-
-
-

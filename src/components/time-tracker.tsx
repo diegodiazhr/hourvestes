@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Clock, PlayCircle, StopCircle, Timer } from 'lucide-react';
 import type { Project, TimeEntry } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { updateTimeEntriesAction } from '@/lib/actions';
 import { useAuth } from '@/hooks/use-auth';
 
 function formatDuration(milliseconds: number) {
@@ -70,7 +69,20 @@ export function TimeTracker({ project }: { project: Project }) {
     setIsPending(true);
     try {
         const token = await user.getIdToken();
-        await updateTimeEntriesAction(project.id, updatedEntries, token);
+        const response = await fetch(`/api/projects/${project.id}/time`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ timeEntries: updatedEntries }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'No se pudo actualizar el registro de tiempo.');
+        }
+
         setTimeEntries(updatedEntries);
     } catch (e: any) {
         toast({

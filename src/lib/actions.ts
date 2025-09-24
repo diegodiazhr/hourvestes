@@ -1,10 +1,9 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getFirebaseAdmin } from './firebase-admin';
-import { LearningOutcome, TimeEntry } from './types';
+import { LearningOutcome } from './types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { cookies } from 'next/headers';
 
@@ -83,33 +82,4 @@ export async function createProjectAction(data: ProjectData) {
   }
 
   revalidatePath('/');
-}
-
-export async function updateTimeEntriesAction(projectId: string, timeEntries: TimeEntry[], token: string) {
-   const { adminAuth, adminDb } = getFirebaseAdmin();
-
-   try {
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    const uid = decodedToken.uid;
-    
-    const projectRef = adminDb.collection('projects').doc(projectId);
-    const projectDoc = await projectRef.get();
-    
-    if (!projectDoc.exists || projectDoc.data()?.userId !== uid) {
-      throw new Error('Permission denied. You do not own this project.');
-    }
-    
-    await projectRef.update({
-      timeEntries: timeEntries,
-    });
-
-    revalidatePath(`/projects/${projectId}`);
-    revalidatePath(`/`);
-  } catch (error) {
-    console.error('Error updating time entries:', error);
-    if(error instanceof Error) {
-        throw new Error(error.message);
-    }
-    throw new Error('No se pudieron actualizar las entradas de tiempo.');
-  }
 }

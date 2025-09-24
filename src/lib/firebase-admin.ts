@@ -2,11 +2,7 @@
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { config } from 'dotenv';
-
-// Force load environment variables from .env file
-config({ path: '.env' });
-
+import 'dotenv/config'
 
 // Singleton instances to avoid re-initialization
 let adminApp: App | null = null;
@@ -14,7 +10,6 @@ let adminAuth: Auth | null = null;
 let adminDb: Firestore | null = null;
 
 function initializeAdmin() {
-  // This function should only be called if the admin app is not already initialized.
   const serviceAccount = {
       type: "service_account",
       project_id: process.env.FIREBASE_PROJECT_ID,

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { Loader2, PlusCircle, Link as LinkIcon, User, Users } from 'lucide-react';
+import { Loader2, PlusCircle, Link as LinkIcon, User, Users, Calendar as CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Accordion,
@@ -19,22 +19,35 @@ import {
 } from "@/components/ui/accordion"
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { Label } from './ui/label';
 
 
 function CreateClassForm({ onClassCreated }: { onClassCreated: () => void }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
+    const [date, setDate] = useState<Date | undefined>();
   
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       const formData = new FormData(event.currentTarget);
+      if (!date) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Debes seleccionar una fecha de finalización.' });
+        return;
+      }
+      formData.append('casEndDate', date.toISOString());
       
       startTransition(async () => {
         const result = await createClassAction(formData);
         if (result.success) {
           toast({ title: '¡Clase creada!', description: 'Tu nueva clase ha sido creada correctamente.' });
           setOpen(false);
+          setDate(undefined);
           onClassCreated();
         } else {
           toast({ variant: 'destructive', title: 'Error', description: result.error });
@@ -55,20 +68,50 @@ function CreateClassForm({ onClassCreated }: { onClassCreated: () => void }) {
             <DialogHeader>
               <DialogTitle>Crear Nueva Clase</DialogTitle>
               <DialogDescription>
-                Dale un nombre a tu nueva clase para empezar a invitar alumnos.
+                Rellena los datos de tu nueva clase para empezar a invitar alumnos.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-              <Input
-                id="name"
-                name="name"
-                placeholder="p. ej., Biología 1º Bachillerato - Grupo A"
-                required
-              />
+            <div className="py-4 space-y-4">
+              <div>
+                <Label htmlFor="name">Nombre de la clase</Label>
+                <Input
+                    id="name"
+                    name="name"
+                    placeholder="p. ej., Biología 1º Bachillerato"
+                    required
+                    className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>Fecha de Finalización de CAS</Label>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                        variant={'outline'}
+                        className={cn(
+                            "w-full justify-start text-left font-normal mt-2",
+                            !date && "text-muted-foreground"
+                        )}
+                        >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP", { locale: es}) : <span>Elige una fecha</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                        locale={es}
+                        />
+                    </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="secondary">Cancelar</Button></DialogClose>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || !date}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Crear Clase
               </Button>
@@ -173,11 +216,17 @@ export function TeacherClasses() {
                 <AccordionItem value={`class-${cls.id}`} key={cls.id}>
                     <AccordionTrigger className="hover:no-underline">
                         <div className='flex flex-1 justify-between items-center pr-4'>
-                            <div className="flex items-center gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center text-left sm:gap-4">
                                 <h2 className="text-xl font-semibold text-left">{cls.name}</h2>
-                                <div className="hidden sm:flex items-center text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                                    <Users className="mr-2 h-4 w-4" />
-                                    {cls.studentCount} {cls.studentCount === 1 ? 'alumno' : 'alumnos'}
+                                <div className="flex items-center text-sm text-muted-foreground gap-4">
+                                    <div className="flex items-center">
+                                        <Users className="mr-2 h-4 w-4" />
+                                        {cls.studentCount} {cls.studentCount === 1 ? 'alumno' : 'alumnos'}
+                                    </div>
+                                    <div className="hidden sm:flex items-center">
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        Fin: {format(cls.casEndDate, 'dd/MM/yyyy')}
+                                    </div>
                                 </div>
                             </div>
                            <InviteLinkButton classId={cls.id} />

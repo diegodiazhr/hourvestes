@@ -60,18 +60,37 @@ export type UserProfile = {
   email: string;
   name: string;
   role: UserRole;
-  school?: string;
+  school: string; // School name is the ID for the school settings
   teacherId?: string;
-  classId?: string; // New field
+  classId?: string;
 };
+
+export type School = {
+    id: string;
+    name: string;
+    logoUrl?: string;
+    aiEnabled: boolean;
+    casEndDate?: Date;
+    adminTeacherId: string;
+}
+
+export type SchoolDocument = Omit<School, 'id' | 'casEndDate'> & {
+    casEndDate?: Timestamp;
+}
 
 export type Class = {
     id: string;
     name: string;
     teacherId: string;
     school: string;
+    casEndDate: Date;
     studentCount: number;
     students: UserProfile[];
 }
+
+export type ClassDocument = Omit<Class, 'id' | 'casEndDate' | 'students' | 'studentCount'> & {
+    casEndDate: Timestamp;
+};
+
 
 export const GOAL_HOURS = 300;

@@ -14,8 +14,10 @@ import { generateReflectionPrompts } from '@/ai/flows/intelligent-reflection-pro
 import type { Project } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 export function ReflectionPrompts({ project }: { project: Project }) {
+  const { schoolSettings } = useAuth();
   const [prompts, setPrompts] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +42,10 @@ export function ReflectionPrompts({ project }: { project: Project }) {
       setIsLoading(false);
     }
   };
+
+  if (!schoolSettings?.aiEnabled) {
+    return null;
+  }
 
   return (
     <Card className="bg-accent/20 border-accent/50">

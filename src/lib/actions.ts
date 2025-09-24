@@ -218,6 +218,7 @@ export async function addEvidenceAction(projectId: string, formData: FormData) {
 
 const CreateClassSchema = z.object({
   name: z.string().min(3, 'El nombre de la clase debe tener al menos 3 caracteres.'),
+  casEndDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "La fecha de finalización es obligatoria."}),
 });
 
 export async function createClassAction(formData: FormData) {
@@ -231,12 +232,13 @@ export async function createClassAction(formData: FormData) {
 
   const validatedFields = CreateClassSchema.safeParse({
     name: formData.get('name'),
+    casEndDate: formData.get('casEndDate'),
   });
 
   if (!validatedFields.success) {
     return {
       success: false,
-      error: 'Nombre de clase inválido.',
+      error: 'Datos de clase inválidos.',
       details: validatedFields.error.flatten(),
     };
   }
@@ -246,6 +248,7 @@ export async function createClassAction(formData: FormData) {
       name: validatedFields.data.name,
       teacherId: uid,
       school: userProfile.school || 'Institución no especificada',
+      casEndDate: Timestamp.fromDate(new Date(validatedFields.data.casEndDate)),
     });
     revalidatePath('/teacher/students');
     return { success: true };
@@ -253,4 +256,73 @@ export async function createClassAction(formData: FormData) {
     console.error('Error creating class:', error);
     return { success: false, error: 'No se pudo crear la clase.' };
   }
+}
+
+const SchoolSettingsSchema = z.object({
+    aiEnabled: z.boolean(),
+    logoFile: z.any().optional(),
+});
+
+export async function updateSchoolSettingsAction(formData: FormData) {
+    const { adminDb, adminStorage } = getFirebaseAdmin();
+    const uid = await getUserIdFromToken();
+
+    const aiEnabled = formData.get('aiEnabled') === 'true';
+    const logoFile = formData.get('logo');
+
+    const validatedFields = SchoolSettingsSchema.safeParse({ aiEnabled, logoFile });
+
+    if (!validatedFields.success) {
+        return { success: false, error: "Datos inválidos.", details: validatedFields.error.flatten() };
+    }
+
+    const userProfile = (await adminDb.collection('users').doc(uid).get()).data();
+    if (!userProfile || userProfile.role !== 'Profesor') {
+        return { success: false, error: 'No autorizado.' };
+    }
+
+    const schoolId = userProfile.school;
+    const schoolRef = adminDb.collection('schools').doc(schoolId);
+    
+    let logoUrl: string | undefined = undefined;
+
+    try {
+        if (logoFile && logoFile.size > 0) {
+            const fileBuffer = Buffer.from(await logoFile.arrayBuffer());
+            const fileId = randomUUID();
+            const fileExtension = mime.extension(logoFile.type) || 'png';
+            const fileName = `logos/${schoolId}-${fileId}.${fileExtension}`;
+
+            const bucket = adminStorage.bucket();
+            const storageFile = bucket.file(fileName);
+            
+            await storageFile.save(fileBuffer, { metadata: { contentType: logoFile.type, cacheControl: 'public, max-age=31536000' } });
+            await storageFile.makePublic();
+            logoUrl = storageFile.publicUrl();
+        }
+
+        const currentSchoolDoc = await schoolRef.get();
+        const updateData: { aiEnabled: boolean; logoUrl?: string, name?: string, adminTeacherId?: string } = {
+            aiEnabled: validatedFields.data.aiEnabled,
+        };
+
+        if (logoUrl) {
+            updateData.logoUrl = logoUrl;
+        }
+
+        if (!currentSchoolDoc.exists) {
+            updateData.name = schoolId;
+            updateData.adminTeacherId = uid;
+            await schoolRef.set(updateData);
+        } else {
+            await schoolRef.update(updateData);
+        }
+
+        revalidatePath('/teacher/school');
+        revalidatePath('/');
+        return { success: true, data: { logoUrl } };
+    } catch (error: any) {
+        console.error('Error updating school settings: ', error);
+        return { success: false, error: 'No se pudieron guardar los ajustes. ' + error.message };
+    }
 }

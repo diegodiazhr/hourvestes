@@ -1,7 +1,7 @@
 
-import { collection, getDocs, doc, getDoc, orderBy, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, orderBy, query, where, onSnapshot, DocumentData } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Project, ProjectDocument, UserProfile, Class } from './types';
+import type { Project, ProjectDocument, UserProfile, Class, ClassDocument, School, SchoolDocument } from './types';
 
 function docToProject(doc: ProjectDocument, id: string): Project {
     return {
@@ -9,6 +9,22 @@ function docToProject(doc: ProjectDocument, id: string): Project {
         ...doc,
         startDate: doc.startDate.toDate(),
         endDate: doc.endDate ? doc.endDate.toDate() : null,
+    };
+}
+
+function docToClass(doc: ClassDocument, id: string): Omit<Class, 'students' | 'studentCount'> {
+    return {
+        id,
+        ...doc,
+        casEndDate: doc.casEndDate.toDate(),
+    }
+}
+
+function docToSchool(doc: SchoolDocument, id: string): School {
+    return {
+        id,
+        ...doc,
+        casEndDate: doc.casEndDate?.toDate(),
     };
 }
 
@@ -113,17 +129,17 @@ export async function getClassesForTeacher(teacherId: string): Promise<Class[]> 
     // Get all classes for the teacher
     const classesQuery = query(collection(db, 'classes'), where('teacherId', '==', teacherId), orderBy('name'));
     const classesSnapshot = await getDocs(classesQuery);
-    const classList = classesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Omit<Class, 'students' | 'studentCount'>[];
+    const classList = classesSnapshot.docs.map(docSnap => docToClass(docSnap.data() as ClassDocument, docSnap.id));
 
     if (classList.length === 0) return [];
 
     // Get all students for the teacher
     const studentsQuery = query(collection(db, 'users'), where('teacherId', '==', teacherId));
     const studentsSnapshot = await getDocs(studentsQuery);
-    const students = studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as UserProfile[];
+    const students = studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
 
     // Map students to their classes
-    const classesWithStudents = classList.map(cls => {
+    const classesWithStudents: Class[] = classList.map(cls => {
         const classStudents = students.filter(student => student.classId === cls.id);
         return {
             ...cls,
@@ -133,4 +149,14 @@ export async function getClassesForTeacher(teacherId: string): Promise<Class[]> 
     });
 
     return classesWithStudents;
+}
+
+export async function getSchoolSettings(schoolId: string): Promise<School | null> {
+    if (!db) return null;
+    const schoolDocRef = doc(db, 'schools', schoolId);
+    const schoolDoc = await getDoc(schoolDocRef);
+    if (schoolDoc.exists()) {
+      return docToSchool(schoolDoc.data() as SchoolDocument, schoolDoc.id);
+    }
+    return null;
 }

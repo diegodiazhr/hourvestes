@@ -1,6 +1,7 @@
 
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -29,6 +30,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import type { School } from '@/lib/types';
+import { getSchoolSettings } from '@/lib/data';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'El nombre es requerido.'}),
@@ -37,7 +40,7 @@ const formSchema = z.object({
   school: z.string().min(2, { message: 'El nombre de la institución es requerido.' }),
 });
 
-export function RegisterForm() {
+export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -49,6 +52,7 @@ export function RegisterForm() {
     schoolName: string;
     className: string;
   } | null>(null);
+  const [schoolSettings, setSchoolSettings] = useState<School | null>(null);
   
   const classId = searchParams.get('classId');
 
@@ -69,6 +73,8 @@ export function RegisterForm() {
         const classSnap = await getDoc(classRef);
         if (classSnap.exists()) {
           const classData = classSnap.data();
+          const schoolData = await getSchoolSettings(classData.school);
+          setSchoolSettings(schoolData);
           setInviteDetails({
             classId,
             teacherId: classData.teacherId,
@@ -87,16 +93,38 @@ export function RegisterForm() {
 
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // A teacher registration flow
     if (!inviteDetails) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Faltan los detalles de la invitación.' });
+        setIsPending(true);
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            const user = userCredential.user;
+             await setDoc(doc(db, 'users', user.uid), {
+                name: values.name,
+                email: values.email,
+                role: 'Profesor',
+                school: values.school,
+            });
+            toast({ title: '¡Cuenta Creada!', description: 'Tu cuenta de profesor ha sido creada.' });
+            router.push('/');
+        } catch (error: any) {
+            let description = 'Ocurrió un error inesperado.';
+            if (error.code === 'auth/email-already-in-use') {
+                description = 'Este correo ya está en uso.';
+            }
+            toast({ variant: 'destructive', title: 'Error de registro', description });
+        } finally {
+            setIsPending(false);
+        }
         return;
     }
+
+    // A student registration flow
     setIsPending(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // Create user profile in Firestore
       await setDoc(doc(db, 'users', user.uid), {
         name: values.name,
         email: values.email,
@@ -128,23 +156,31 @@ export function RegisterForm() {
   const isTeacherRegistration = !classId && !isLoadingParams;
 
   if (isLoadingParams) {
-      // You can return a skeleton loader here
-      return <div>Cargando...</div>
+      return (
+        <div className="flex min-h-screen items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      )
   }
 
   return (
-      <div className="w-full max-w-md p-4">
-        <div className="text-center mb-8">
-            <BookOpenCheck className="h-10 w-10 mx-auto text-primary" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-6">
+            {schoolSettings?.logoUrl ? (
+                 <Image src={schoolSettings.logoUrl} alt={`${schoolSettings.name} logo`} width={64} height={64} className="mx-auto h-16 w-16 rounded-lg object-contain mb-4" />
+            ): (
+                <BookOpenCheck className="h-10 w-10 mx-auto text-primary" />
+            )}
             <h1 className="text-3xl font-bold font-headline mt-2">HourVest</h1>
             <p className="text-muted-foreground">{isTeacherRegistration ? 'Crea una cuenta de profesor' : 'Crea tu cuenta de alumno'}</p>
         </div>
         <Card>
           <CardHeader>
-            <CardTitle>Registro de Nueva Cuenta</CardTitle>
+            <CardTitle>{isTeacherRegistration ? 'Registro de Profesor' : 'Registro de Alumno'}</CardTitle>
             {inviteDetails && (
                 <CardDescription>
-                    Te estás registrando como alumno en la clase <strong>{inviteDetails.className}</strong> de {inviteDetails.schoolName}.
+                    Te estás registrando en la clase <strong>{inviteDetails.className}</strong> de {inviteDetails.schoolName}.
                 </CardDescription>
             )}
              {isTeacherRegistration && (
@@ -208,23 +244,6 @@ export function RegisterForm() {
                     </FormItem>
                   )}
                 />
-                 {!isTeacherRegistration && (
-                    <input type="hidden" name="role" value="Alumno" />
-                )}
-                 {isTeacherRegistration && (
-                     <FormField
-                        control={form.control}
-                        name="role"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                <input type="hidden" {...field} value="Profesor" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                )}
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
                 <Button type="submit" className="w-full" disabled={isPending || (!isTeacherRegistration && !inviteDetails)}>
@@ -242,5 +261,6 @@ export function RegisterForm() {
           </Form>
         </Card>
       </div>
+    </div>
   );
 }

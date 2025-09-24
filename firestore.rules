@@ -1,40 +1,39 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check ownership
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    // Users collection
     match /users/{userId} {
-      // Allow users to read and update their own profile
-      allow read, update: if isOwner(userId);
-      // Allow teachers to read their students' profiles
-      allow read: if exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                   resource.data.teacherId == request.auth.uid &&
-                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor';
+      allow read, write: if isOwner(userId);
     }
 
-    // Projects collection
     match /projects/{projectId} {
-      // Allow users to create projects for themselves
-      allow create: if isOwner(request.resource.data.userId);
-      // Allow users to read, update, and delete their own projects
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow read, create, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
-    
-    // Classes collection
+
     match /classes/{classId} {
-      // Allow teachers to create classes
-      allow create: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor';
-      // Allow the teacher who owns the class to read it
-      allow read: if resource.data.teacherId == request.auth.uid;
-      // Public read for registration purposes
-      allow get: if true; 
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.teacherId == request.auth.uid;
+    }
+
+    // A teacher can read the profile of their own students
+    match /users/{studentId} {
+      allow read: if isSignedIn() && get(/databases/$(database)/documents/users/$(studentId)).data.teacherId == request.auth.uid;
+    }
+
+    // A teacher can manage their own school's settings
+    match /schools/{schoolId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/schools/$(schoolId)).data.adminTeacherId
+                   || (isSignedIn() && !exists(/databases/$(database)/documents/schools/$(schoolId)));
     }
   }
 }

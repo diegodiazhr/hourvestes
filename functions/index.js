@@ -1,4 +1,3 @@
-require('dotenv').config({ path: '../.env' });
 
 const {https} = require('firebase-functions');
 const next = require('next');

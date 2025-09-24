@@ -1,7 +1,7 @@
 
 import { collection, getDocs, doc, getDoc, orderBy, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Project, ProjectDocument, UserProfile } from './types';
+import type { Project, ProjectDocument, UserProfile, Class } from './types';
 
 function docToProject(doc: ProjectDocument, id: string): Project {
     return {
@@ -52,6 +52,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
             role: data.role,
             school: data.school,
             teacherId: data.teacherId,
+            classId: data.classId,
         }
     }
     return null;
@@ -79,6 +80,7 @@ export function onStudentsUpdate(teacherId: string, callback: (students: UserPro
           role: data.role,
           school: data.school,
           teacherId: data.teacherId,
+          classId: data.classId,
         };
       });
       callback(studentList);
@@ -100,4 +102,32 @@ export async function getProjectsForStudent(studentId: string): Promise<Project[
         return docToProject(data, doc.id);
     });
     return projectList;
+}
+
+export async function getClassesForTeacher(teacherId: string): Promise<Class[]> {
+    if (!db) return [];
+    
+    // Get all classes for the teacher
+    const classesQuery = query(collection(db, 'classes'), where('teacherId', '==', teacherId), orderBy('name'));
+    const classesSnapshot = await getDocs(classesQuery);
+    const classList = classesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Omit<Class, 'students' | 'studentCount'>[];
+
+    if (classList.length === 0) return [];
+
+    // Get all students for the teacher
+    const studentsQuery = query(collection(db, 'users'), where('teacherId', '==', teacherId));
+    const studentsSnapshot = await getDocs(studentsQuery);
+    const students = studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as UserProfile[];
+
+    // Map students to their classes
+    const classesWithStudents = classList.map(cls => {
+        const classStudents = students.filter(student => student.classId === cls.id);
+        return {
+            ...cls,
+            students: classStudents,
+            studentCount: classStudents.length,
+        };
+    });
+
+    return classesWithStudents;
 }

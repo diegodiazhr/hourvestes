@@ -184,7 +184,7 @@ export async function addEvidenceAction(projectId: string, formData: FormData) {
         const fileName = `${fileId}.${fileExtension}`;
         const filePath = `evidence/${uid}/${projectId}/${fileName}`;
 
-        const bucket = adminStorage.bucket(); // This will now use the default bucket from initialization
+        const bucket = adminStorage.bucket();
         const storageFile = bucket.file(filePath);
         
         await storageFile.save(fileBuffer, {
@@ -214,4 +214,43 @@ export async function addEvidenceAction(projectId: string, formData: FormData) {
         console.error('Error adding evidence:', error);
         return { success: false, error: 'No se pudo subir el archivo. ' + (error.message || '') };
     }
+}
+
+const CreateClassSchema = z.object({
+  name: z.string().min(3, 'El nombre de la clase debe tener al menos 3 caracteres.'),
+});
+
+export async function createClassAction(formData: FormData) {
+  const { adminDb } = getFirebaseAdmin();
+  const uid = await getUserIdFromToken();
+  const userProfile = (await adminDb.collection('users').doc(uid).get()).data();
+
+  if (!userProfile || userProfile.role !== 'Profesor') {
+    throw new Error('Solo los profesores pueden crear clases.');
+  }
+
+  const validatedFields = CreateClassSchema.safeParse({
+    name: formData.get('name'),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      error: 'Nombre de clase inválido.',
+      details: validatedFields.error.flatten(),
+    };
+  }
+
+  try {
+    await adminDb.collection('classes').add({
+      name: validatedFields.data.name,
+      teacherId: uid,
+      school: userProfile.school || 'Institución no especificada',
+    });
+    revalidatePath('/teacher/students');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error creating class:', error);
+    return { success: false, error: 'No se pudo crear la clase.' };
+  }
 }

@@ -52,26 +52,10 @@ function InviteButton({
   const { toast } = useToast();
 
   const handleInvite = () => {
-    const baseUrl = window.location.origin;
-    const inviteLink = `${baseUrl}/register?ref=${teacherId}${
-      schoolName ? `&school=${encodeURIComponent(schoolName)}` : ''
-    }`;
-
-    navigator.clipboard
-      .writeText(inviteLink)
-      .then(() => {
-        toast({
-          title: '¡Enlace Copiado!',
-          description:
-            'El enlace de invitación ha sido copiado a tu portapapeles.',
-        });
-      })
-      .catch(() => {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'No se pudo copiar el enlace.',
-        });
+    toast({
+        title: 'Ve a la sección "Alumnos"',
+        description:
+          'Para invitar alumnos, crea una clase y copia el enlace de invitación desde la sección "Alumnos".',
       });
   };
 
@@ -104,7 +88,7 @@ function LeftSidebarNav() {
             </div>
             <div className="flex-1">
                 <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-                    <Link href="#" className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary">
+                    <Link href="/" className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary">
                         <Home className="h-4 w-4" />
                         Inicio
                     </Link>
@@ -112,7 +96,7 @@ function LeftSidebarNav() {
                         <FolderKanban className="h-4 w-4" />
                         Proyectos
                     </Link>
-                    <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
+                    <Link href="/teacher/students" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
                         <Users className="h-4 w-4" />
                         Alumnos
                     </Link>

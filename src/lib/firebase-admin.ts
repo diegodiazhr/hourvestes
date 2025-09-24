@@ -6,7 +6,7 @@ import { getStorage, Storage } from 'firebase-admin/storage';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// This will load the .env file from the root of the project, NOT from the functions directory
+// This will load the .env file from the root of the project.
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 

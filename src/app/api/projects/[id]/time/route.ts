@@ -5,8 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 const TimeEntrySchema = z.object({
-  startTime: z.string().datetime(),
-  endTime: z.string().datetime().nullable(),
+  startTime: z.string(), // Use string validation, ISO format is handled by `new Date()`
+  endTime: z.string().nullable(),
 });
 
 const UpdateRequestSchema = z.object({
@@ -16,12 +16,13 @@ const UpdateRequestSchema = z.object({
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   const projectId = params.id;
-  const { adminAuth, adminDb } = getFirebaseAdmin();
-
+  
   try {
+    const { adminAuth, adminDb } = getFirebaseAdmin();
     const authorization = request.headers.get('Authorization');
+
     if (!authorization?.startsWith('Bearer ')) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: 'Unauthorized. No bearer token provided.' }, { status: 401 });
     }
 
     const token = authorization.substring(7);
@@ -52,11 +53,17 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     return NextResponse.json({ message: 'Time entries updated successfully' });
 
-  } catch (error) {
-    console.error('Error updating time entries:', error);
-    if (error instanceof Error && (error.name === 'auth/id-token-expired' || error.name === 'auth/argument-error')) {
+  } catch (error: any) {
+    console.error('Error in /api/projects/[id]/time:', error);
+    
+    if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
         return NextResponse.json({ message: 'Invalid authentication token.' }, { status: 401 });
     }
+
+    if (error instanceof z.ZodError) {
+        return NextResponse.json({ message: 'Invalid request body', errors: error.flatten() }, { status: 400 });
+    }
+
     return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 });
   }
 }

@@ -1,9 +1,12 @@
 
+'use server';
+
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getStorage, Storage } from 'firebase-admin/storage';
 import * as functions from 'firebase-functions';
+
 
 // --- Singleton instances to avoid re-initialization ---
 let adminApp: App | null = null;
@@ -31,7 +34,7 @@ function getServiceAccount() {
     const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
 
     if (missingEnvVars.length > 0) {
-        const errorMessage = `Firebase Admin SDK configuration is missing. Check .env.local file. Missing: ${missingEnvVars.join(', ')}`;
+        const errorMessage = `Firebase Admin SDK configuration is missing for local development. Check .env file. Missing: ${missingEnvVars.join(', ')}`;
         console.error(errorMessage);
         // We throw the error here to ensure the application fails fast if configuration is missing.
         throw new Error(errorMessage);
@@ -45,14 +48,18 @@ function getServiceAccount() {
 }
 
 function getStorageBucket() {
+    // Check if running in Firebase Functions environment
     const functionsConfig = functions.config();
-    if (Object.keys(functionsConfig).length && functionsConfig.firebase) {
-        return functionsConfig.firebase.storageBucket || `${functionsConfig.firebase.projectId}.appspot.com`;
+     // In Cloud Functions, storageBucket might be available directly in firebase config
+    if (Object.keys(functionsConfig).length && functionsConfig.firebase && functionsConfig.firebase.storageBucket) {
+        return functionsConfig.firebase.storageBucket;
     }
-    // Local/server development
-    const bucketName = process.env.AUTH_FIREBASE_STORAGE_BUCKET;
+    
+    // Fallback for local/server development and Cloud Functions where it might not be set
+    const bucketName = process.env.AUTH_FIREBASE_STORAGE_BUCKET || `${getServiceAccount().projectId}.appspot.com`;
+    
      if (!bucketName) {
-        const errorMessage = `Firebase Storage bucket name is missing. Please set AUTH_FIREBASE_STORAGE_BUCKET in your .env.local file.`;
+        const errorMessage = `Firebase Storage bucket name is missing. Please set AUTH_FIREBASE_STORAGE_BUCKET in your .env.local file or ensure project ID is available.`;
         console.error(errorMessage);
         throw new Error(errorMessage);
     }
@@ -61,21 +68,26 @@ function getStorageBucket() {
 
 
 function initializeAdmin() {
-    const serviceAccount = getServiceAccount();
-    const storageBucket = getStorageBucket();
+  if (adminApp) {
+    return;
+  }
 
-    if (!getApps().length) {
-        adminApp = initializeApp({
-          credential: cert(serviceAccount),
-          storageBucket: storageBucket,
-        });
-    } else {
-        adminApp = getApps()[0];
-    }
-      
-    adminAuth = getAuth(adminApp);
-    adminDb = getFirestore(adminApp);
-    adminStorage = getStorage(adminApp);
+  const serviceAccount = getServiceAccount();
+  const storageBucket = getStorageBucket();
+
+  const apps = getApps();
+  if (apps.length > 0) {
+    adminApp = apps[0];
+  } else {
+    adminApp = initializeApp({
+      credential: cert(serviceAccount),
+      storageBucket: storageBucket,
+    });
+  }
+    
+  adminAuth = getAuth(adminApp);
+  adminDb = getFirestore(adminApp);
+  adminStorage = getStorage(adminApp);
 }
 
 // Export a function that initializes and returns the admin instances

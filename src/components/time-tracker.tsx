@@ -79,8 +79,13 @@ export function TimeTracker({ project }: { project: Project }) {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'No se pudo actualizar el registro de tiempo.');
+          try {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'No se pudo actualizar el registro de tiempo.');
+          } catch (jsonError) {
+             // This handles cases where the response is not valid JSON (e.g. 500 server error with HTML response)
+             throw new Error(`HTTP error ${response.status}: No se pudo actualizar el registro de tiempo.`);
+          }
         }
 
         setTimeEntries(updatedEntries);

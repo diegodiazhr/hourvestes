@@ -2,7 +2,6 @@
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import 'dotenv/config'
 
 // Singleton instances to avoid re-initialization
 let adminApp: App | null = null;

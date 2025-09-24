@@ -16,21 +16,33 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { CasCategoryIcon } from '@/components/cas-category-icon';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Save } from 'lucide-react';
 import { EvidenceSection } from '@/components/evidence-section';
 import { ReflectionPrompts } from '@/components/reflection-prompts';
 import { TimeTracker } from '@/components/time-tracker';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { DashboardSkeleton } from './dashboard-skeleton';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { Terminal } from 'lucide-react';
+import { Terminal, Loader2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { updateProjectDetailsAction } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 export function ProjectDetail() {
   const params = useParams();
   const projectId = params.id as string;
+  const { toast } = useToast();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // State for editable fields
+  const [description, setDescription] = useState('');
+  const [personalGoals, setPersonalGoals] = useState('');
+  const [reflections, setReflections] = useState('');
 
   useEffect(() => {
     if (projectId) {
@@ -41,6 +53,10 @@ export function ProjectDetail() {
           const projectData = await getProject(projectId);
           if (projectData) {
             setProject(projectData);
+            // Initialize editable fields state
+            setDescription(projectData.description);
+            setPersonalGoals(projectData.personalGoals);
+            setReflections(projectData.reflections);
           } else {
             setError('No se pudo encontrar el proyecto solicitado.');
           }
@@ -54,6 +70,31 @@ export function ProjectDetail() {
       fetchProject();
     }
   }, [projectId]);
+  
+  const handleSaveChanges = async () => {
+    if (!project) return;
+    setIsSaving(true);
+    try {
+        await updateProjectDetailsAction(project.id, {
+            description,
+            personalGoals,
+            reflections
+        });
+        toast({
+            title: '¡Proyecto Actualizado!',
+            description: 'Tus cambios han sido guardados correctamente.',
+        });
+    } catch (e: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Error al Guardar',
+            description: e.message || 'No se pudieron guardar los cambios.',
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -85,28 +126,34 @@ export function ProjectDetail() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-2">
-          <h1 className="text-4xl font-bold font-headline text-foreground">
-            {project.name}
-          </h1>
-          <Badge
-            variant="secondary"
-            className="flex items-center gap-2 text-base px-4 py-2 shrink-0 capitalize"
-          >
-            <CasCategoryIcon
-              category={project.category}
-              className="h-5 w-5"
-            />
-            {project.category}
-          </Badge>
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div>
+            <h1 className="text-4xl font-bold font-headline text-foreground">
+                {project.name}
+            </h1>
+            <p className="text-muted-foreground capitalize">
+            {project.startDate ? format(project.startDate, 'd MMMM, yyyy', { locale: es }) : ''} -{' '}
+            {project.endDate
+                ? format(project.endDate, 'd MMMM, yyyy', { locale: es })
+                : 'Actual'}
+            </p>
         </div>
-        <p className="text-muted-foreground capitalize">
-          {project.startDate ? format(project.startDate, 'd MMMM, yyyy', { locale: es }) : ''} -{' '}
-          {project.endDate
-            ? format(project.endDate, 'd MMMM, yyyy', { locale: es })
-            : 'Actual'}
-        </p>
+        <div className="flex gap-4 items-center">
+            <Button onClick={handleSaveChanges} disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Guardar Cambios
+            </Button>
+            <Badge
+                variant="secondary"
+                className="flex items-center gap-2 text-base px-4 py-2 shrink-0 capitalize"
+            >
+                <CasCategoryIcon
+                category={project.category}
+                className="h-5 w-5"
+                />
+                {project.category}
+            </Badge>
+        </div>
       </div>
 
       <Separator />
@@ -120,9 +167,14 @@ export function ProjectDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-foreground/80 whitespace-pre-wrap">
-                {project.description}
-              </p>
+                <Label htmlFor="description" className="sr-only">Descripción del Proyecto</Label>
+                <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe tu proyecto..."
+                    className="min-h-[120px] text-base"
+                />
             </CardContent>
           </Card>
 
@@ -135,9 +187,14 @@ export function ProjectDetail() {
             <CardContent className="space-y-6">
               <div>
                 <h3 className="font-semibold mb-2 text-foreground">Metas Personales</h3>
-                <p className="text-foreground/80 whitespace-pre-wrap">
-                  {project.personalGoals}
-                </p>
+                <Label htmlFor="personalGoals" className="sr-only">Metas Personales</Label>
+                 <Textarea
+                    id="personalGoals"
+                    value={personalGoals}
+                    onChange={(e) => setPersonalGoals(e.target.value)}
+                    placeholder="¿Cuáles son tus metas personales para este proyecto?"
+                    className="min-h-[100px] text-base"
+                />
               </div>
               <Separator />
               <div>
@@ -161,9 +218,14 @@ export function ProjectDetail() {
               <CardTitle className="font-headline">Reflexiones</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-foreground/80 whitespace-pre-wrap">
-                {project.reflections}
-              </p>
+                <Label htmlFor="reflections" className="sr-only">Reflexiones</Label>
+                <Textarea
+                    id="reflections"
+                    value={reflections}
+                    onChange={(e) => setReflections(e.target.value)}
+                    placeholder="Escribe aquí tus reflexiones sobre el proyecto..."
+                    className="min-h-[200px] text-base"
+                />
             </CardContent>
           </Card>
         </div>

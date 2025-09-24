@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -82,4 +83,48 @@ export async function createProjectAction(data: ProjectData) {
   }
 
   revalidatePath('/');
+}
+
+
+const UpdateProjectDetailsSchema = z.object({
+    description: z.string().min(10, { message: 'La descripción debe tener al menos 10 caracteres.' }).optional(),
+    personalGoals: z.string().optional(),
+    reflections: z.string().optional(),
+});
+
+export async function updateProjectDetailsAction(projectId: string, data: z.infer<typeof UpdateProjectDetailsSchema>) {
+    const { adminDb } = getFirebaseAdmin();
+    let uid: string;
+    try {
+        uid = await getUserIdFromToken();
+    } catch(e: any) {
+        throw e;
+    }
+
+    const validatedFields = UpdateProjectDetailsSchema.safeParse(data);
+
+    if (!validatedFields.success) {
+        throw new Error('Los datos proporcionados no son válidos.');
+    }
+
+    const projectRef = adminDb.collection('projects').doc(projectId);
+    const projectDoc = await projectRef.get();
+
+    if (!projectDoc.exists) {
+        throw new Error('Proyecto no encontrado.');
+    }
+
+    if (projectDoc.data()?.userId !== uid) {
+        throw new Error('No tienes permiso para editar este proyecto.');
+    }
+
+    try {
+        await projectRef.update(validatedFields.data);
+    } catch (error) {
+        console.error('Error updating project:', error);
+        throw new Error('No se pudo actualizar el proyecto en la base de datos.');
+    }
+
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath('/');
 }

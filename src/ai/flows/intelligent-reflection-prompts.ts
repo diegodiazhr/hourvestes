@@ -1,3 +1,4 @@
+
 // src/ai/flows/intelligent-reflection-prompts.ts
 'use server';
 
@@ -38,6 +39,8 @@ const reflectionPromptsPrompt = ai.definePrompt({
   prompt: `You are an AI assistant designed to provide insightful reflection prompts for students undertaking CAS projects as part of the International Baccalaureate Diploma Programme.
 
   Based on the details of the student's project, generate a list of reflection prompts to help the student think critically about their experiences and document their learning journey effectively.
+
+  IMPORTANT: All your responses and reflection prompts must be in Spanish.
 
   Consider the project type, progress, the student's goals, and the project description when creating the prompts.
 

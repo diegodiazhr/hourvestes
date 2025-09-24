@@ -1,0 +1,12 @@
+require('dotenv').config({ path: '../.env' });
+
+const {https} = require('firebase-functions');
+const next = require('next');
+
+const dev = process.env.NODE_ENV !== 'production';
+const app = next({dev, conf: {distDir: '.next'}});
+const handle = app.getRequestHandler();
+
+exports.app = https.onRequest((req, res) => {
+  return app.prepare().then(() => handle(req, res));
+});

@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { CasCategoryIcon } from '@/components/cas-category-icon';
-import { CheckCircle2, Save } from 'lucide-react';
+import { CheckCircle2, Save, Pencil, X, Undo2 } from 'lucide-react';
 import { EvidenceSection } from '@/components/evidence-section';
 import { ReflectionPrompts } from '@/components/reflection-prompts';
 import { TimeTracker } from '@/components/time-tracker';
@@ -43,6 +43,11 @@ export function ProjectDetail() {
   const [description, setDescription] = useState('');
   const [personalGoals, setPersonalGoals] = useState('');
   const [reflections, setReflections] = useState('');
+  
+  // State for edit modes
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isEditingGoals, setIsEditingGoals] = useState(false);
+  const [isEditingReflections, setIsEditingReflections] = useState(false);
 
   useEffect(() => {
     if (projectId) {
@@ -84,6 +89,10 @@ export function ProjectDetail() {
             title: '¡Proyecto Actualizado!',
             description: 'Tus cambios han sido guardados correctamente.',
         });
+        setIsEditingDescription(false);
+        setIsEditingGoals(false);
+        setIsEditingReflections(false);
+
     } catch (e: any) {
         toast({
             variant: 'destructive',
@@ -94,6 +103,20 @@ export function ProjectDetail() {
         setIsSaving(false);
     }
   };
+
+  const cancelEdit = (field: 'description' | 'goals' | 'reflections') => {
+      if (!project) return;
+      if (field === 'description') {
+          setDescription(project.description);
+          setIsEditingDescription(false);
+      } else if (field === 'goals') {
+          setPersonalGoals(project.personalGoals);
+          setIsEditingGoals(false);
+      } else if (field === 'reflections') {
+        setReflections(project.reflections);
+        setIsEditingReflections(false);
+      }
+  }
 
 
   if (loading) {
@@ -124,6 +147,8 @@ export function ProjectDetail() {
     date: new Date(),
   }));
 
+  const isAnythingEditing = isEditingDescription || isEditingGoals || isEditingReflections;
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -139,10 +164,12 @@ export function ProjectDetail() {
             </p>
         </div>
         <div className="flex gap-4 items-center">
-            <Button onClick={handleSaveChanges} disabled={isSaving}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Guardar Cambios
-            </Button>
+             {isAnythingEditing && (
+                <Button onClick={handleSaveChanges} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Guardar Cambios
+                </Button>
+             )}
             <Badge
                 variant="secondary"
                 className="flex items-center gap-2 text-base px-4 py-2 shrink-0 capitalize"
@@ -161,40 +188,70 @@ export function ProjectDetail() {
       <div className="grid md:grid-cols-3 gap-8 items-start">
         <div className="md:col-span-2 space-y-8">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row justify-between items-center">
               <CardTitle className="font-headline">
                 Descripción del Proyecto
               </CardTitle>
+               {isEditingDescription ? (
+                    <Button variant="ghost" size="sm" onClick={() => cancelEdit('description')}>
+                        <Undo2 className="mr-2" /> Cancelar
+                    </Button>
+                ) : (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditingDescription(true)}>
+                        <Pencil className="mr-2" /> Editar
+                    </Button>
+                )}
             </CardHeader>
             <CardContent>
-                <Label htmlFor="description" className="sr-only">Descripción del Proyecto</Label>
-                <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe tu proyecto..."
-                    className="min-h-[120px] text-base"
-                />
+                {isEditingDescription ? (
+                    <>
+                        <Label htmlFor="description" className="sr-only">Descripción del Proyecto</Label>
+                        <Textarea
+                            id="description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Describe tu proyecto..."
+                            className="min-h-[120px] text-base"
+                        />
+                    </>
+                ) : (
+                    <p className="text-base text-foreground/80 whitespace-pre-wrap min-h-[120px]">{description || 'No hay descripción todavía.'}</p>
+                )}
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row justify-between items-center">
               <CardTitle className="font-headline">
                 Metas y Resultados de Aprendizaje
               </CardTitle>
+                {isEditingGoals ? (
+                    <Button variant="ghost" size="sm" onClick={() => cancelEdit('goals')}>
+                        <Undo2 className="mr-2" /> Cancelar
+                    </Button>
+                ) : (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditingGoals(true)}>
+                        <Pencil className="mr-2" /> Editar
+                    </Button>
+                )}
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <h3 className="font-semibold mb-2 text-foreground">Metas Personales</h3>
-                <Label htmlFor="personalGoals" className="sr-only">Metas Personales</Label>
-                 <Textarea
-                    id="personalGoals"
-                    value={personalGoals}
-                    onChange={(e) => setPersonalGoals(e.target.value)}
-                    placeholder="¿Cuáles son tus metas personales para este proyecto?"
-                    className="min-h-[100px] text-base"
-                />
+                {isEditingGoals ? (
+                    <>
+                        <Label htmlFor="personalGoals" className="sr-only">Metas Personales</Label>
+                        <Textarea
+                            id="personalGoals"
+                            value={personalGoals}
+                            onChange={(e) => setPersonalGoals(e.target.value)}
+                            placeholder="¿Cuáles son tus metas personales para este proyecto?"
+                            className="min-h-[100px] text-base"
+                        />
+                    </>
+                ) : (
+                    <p className="text-base text-foreground/80 whitespace-pre-wrap min-h-[100px]">{personalGoals || 'No se han definido metas personales.'}</p>
+                )}
               </div>
               <Separator />
               <div>
@@ -214,18 +271,33 @@ export function ProjectDetail() {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row justify-between items-center">
               <CardTitle className="font-headline">Reflexiones</CardTitle>
+                {isEditingReflections ? (
+                    <Button variant="ghost" size="sm" onClick={() => cancelEdit('reflections')}>
+                        <Undo2 className="mr-2" /> Cancelar
+                    </Button>
+                ) : (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditingReflections(true)}>
+                        <Pencil className="mr-2" /> Editar
+                    </Button>
+                )}
             </CardHeader>
             <CardContent>
-                <Label htmlFor="reflections" className="sr-only">Reflexiones</Label>
-                <Textarea
-                    id="reflections"
-                    value={reflections}
-                    onChange={(e) => setReflections(e.target.value)}
-                    placeholder="Escribe aquí tus reflexiones sobre el proyecto..."
-                    className="min-h-[200px] text-base"
-                />
+                {isEditingReflections ? (
+                    <>
+                        <Label htmlFor="reflections" className="sr-only">Reflexiones</Label>
+                        <Textarea
+                            id="reflections"
+                            value={reflections}
+                            onChange={(e) => setReflections(e.target.value)}
+                            placeholder="Escribe aquí tus reflexiones sobre el proyecto..."
+                            className="min-h-[200px] text-base"
+                        />
+                    </>
+                ) : (
+                     <p className="text-base text-foreground/80 whitespace-pre-wrap min-h-[200px]">{reflections || 'Aún no has escrito ninguna reflexión.'}</p>
+                )}
             </CardContent>
           </Card>
         </div>

@@ -1,4 +1,3 @@
-
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -7,13 +6,10 @@ import {
   BarChart2,
   CheckCircle,
   Home,
-  User,
   Building,
-  Settings,
   LogOut,
   Copy,
   Search,
-  Filter,
   FolderKanban,
   Menu,
 } from 'lucide-react';
@@ -22,10 +18,9 @@ import { onStudentsUpdate, getProjectsForStudent } from '@/lib/data';
 import type { UserProfile, Project } from '@/lib/types';
 import { GOAL_HOURS } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -37,10 +32,8 @@ import {
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import StudentsList from './students-list';
-
 
 function InviteButton({
   teacherId,
@@ -133,45 +126,51 @@ export default function TeacherDashboard() {
         async (studentProfiles) => {
           setLoading(true);
           setError(null);
-          const studentsWithHours = await Promise.all(
-            studentProfiles.map(async (student) => {
-              const projects = await getProjectsForStudent(student.id);
-              const totalMilliseconds = projects.reduce((acc, project) => {
-                const projectTime =
-                  project.timeEntries?.reduce((timeAcc, entry) => {
-                    if (entry.endTime) {
-                      const start = new Date(entry.startTime).getTime();
-                      const end = new Date(entry.endTime).getTime();
-                      return timeAcc + (end - start);
-                    }
-                    return timeAcc;
-                  }, 0) || 0;
-                return acc + projectTime;
-              }, 0);
-              const totalHours = totalMilliseconds / (1000 * 60 * 60);
-              return { ...student, totalHours };
-            })
-          );
-          setStudents(studentsWithHours);
+          try {
+            const studentsWithHours = await Promise.all(
+              studentProfiles.map(async (student) => {
+                const projects = await getProjectsForStudent(student.id);
+                const totalMilliseconds = projects.reduce((acc, project) => {
+                  const projectTime =
+                    project.timeEntries?.reduce((timeAcc, entry) => {
+                      if (entry.endTime) {
+                        const start = new Date(entry.startTime).getTime();
+                        const end = new Date(entry.endTime).getTime();
+                        return timeAcc + (end - start);
+                      }
+                      return timeAcc;
+                    }, 0) || 0;
+                  return acc + projectTime;
+                }, 0);
+                const totalHours = totalMilliseconds / (1000 * 60 * 60);
+                return { ...student, totalHours };
+              })
+            );
+            setStudents(studentsWithHours);
 
-          const allProjects = await Promise.all(
-            studentProfiles.map(async (student) => {
-              const studentProjects = await getProjectsForStudent(student.id);
-              return studentProjects.map((p) => ({
-                ...p,
-                studentName: student.name,
-              }));
-            })
-          );
+            const allProjects = await Promise.all(
+              studentProfiles.map(async (student) => {
+                const studentProjects = await getProjectsForStudent(student.id);
+                return studentProjects.map((p) => ({
+                  ...p,
+                  studentName: student.name,
+                }));
+              })
+            );
 
-          const flattenedProjects = allProjects.flat();
-          flattenedProjects.sort(
-            (a, b) =>
-              new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-          );
-          setActivities(flattenedProjects.slice(0, 5)); 
+            const flattenedProjects = allProjects.flat();
+            flattenedProjects.sort(
+              (a, b) =>
+                new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+            );
+            setActivities(flattenedProjects.slice(0, 5)); 
 
-          setLoading(false);
+            setLoading(false);
+          } catch (e: any) {
+            setError('Error al procesar los datos de los alumnos.');
+            console.error(e);
+            setLoading(false);
+          }
         },
         (err) => {
             setError('No se pudieron cargar los datos de los alumnos. Es posible que no tengas permisos para verlos. Revisa las reglas de seguridad de Firestore.');
@@ -185,6 +184,7 @@ export default function TeacherDashboard() {
       );
       return () => unsubscribe();
     } else if (userProfile) {
+      // User is not a teacher
       setLoading(false);
     }
   }, [userProfile, toast]);
@@ -221,7 +221,7 @@ export default function TeacherDashboard() {
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
+            <SheetContent side="left" className="flex flex-col p-0">
               <LeftSidebarNav />
             </SheetContent>
           </Sheet>

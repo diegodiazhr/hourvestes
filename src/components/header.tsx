@@ -1,31 +1,19 @@
-
 'use client';
 import Link from 'next/link';
-import { BookOpenCheck, LogOut, Menu } from 'lucide-react';
+import { BookOpenCheck, LogOut, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-
-// This component can be used to display nav links in a sheet for mobile
-function MobileNav() {
-    // This is just a placeholder, in a real app you'd have your nav links here
-    return (
-        <nav className="grid gap-4 text-lg font-medium">
-            <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-                <BookOpenCheck className="h-6 w-6" />
-                <span className="sr-only">HourVest</span>
-            </Link>
-            <Link href="/" className="text-muted-foreground hover:text-foreground">
-                Dashboard
-            </Link>
-            <Link href="/projects/new" className="text-muted-foreground hover:text-foreground">
-                Nuevo Proyecto
-            </Link>
-        </nav>
-    )
-}
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 
 export function Header() {
@@ -48,15 +36,42 @@ export function Header() {
             <BookOpenCheck className="h-6 w-6" />
             <span className="hidden sm:inline">HourVest</span>
           </Link>
-          {user && (
+          
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+             {userProfile?.role === 'Profesor' ? (
+                <Link href="/teacher/students" className="text-muted-foreground transition-colors hover:text-foreground">Alumnos</Link>
+             ) : (
+                <Link href="/projects/new" className="text-muted-foreground transition-colors hover:text-foreground">Nuevo Proyecto</Link>
+             )}
+          </nav>
+          
+          {user && userProfile && (
             <div className="flex items-center gap-2 md:gap-4">
-                <span className="text-sm text-foreground hidden sm:inline">
-                    {userProfile?.name}
-                </span>
-              <Button onClick={handleSignOut} variant="ghost" size="sm">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Cerrar Sesión</span>
-              </Button>
+               <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                       <Avatar>
+                         <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${userProfile.name}`} alt={userProfile.name} />
+                         <AvatarFallback>{userProfile.name.charAt(0)}</AvatarFallback>
+                       </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{userProfile.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Cerrar Sesión</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
             </div>
           )}
         </div>

@@ -35,12 +35,14 @@ function ClassesSkeleton() {
 
 export default function TeacherStudentsPage() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-1">
-        <Suspense fallback={<ClassesSkeleton />}>
-          <TeacherClasses />
-        </Suspense>
+    <div className="grid min-h-screen w-full md:grid-cols-1">
+      <main className="flex flex-1 flex-col">
+        <Header />
+        <div className="flex-1">
+            <Suspense fallback={<ClassesSkeleton />}>
+                <TeacherClasses />
+            </Suspense>
+        </div>
       </main>
     </div>
   );

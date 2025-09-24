@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, useTransition } from 'react';
 import { useAuth } from '@/hooks/use-auth';
@@ -7,10 +6,10 @@ import { createClassAction } from '@/lib/actions';
 import type { Class, UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { Loader2, PlusCircle, Copy, Users, Link as LinkIcon, User } from 'lucide-react';
+import { Loader2, PlusCircle, Link as LinkIcon, User, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Accordion,
@@ -19,6 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import Link from 'next/link';
+import { Skeleton } from './ui/skeleton';
 
 
 function CreateClassForm({ onClassCreated }: { onClassCreated: () => void }) {
@@ -106,7 +106,7 @@ function StudentCard({ student }: { student: UserProfile }) {
     return (
         <Card className="hover:shadow-md transition-shadow">
              <Link href={`/teacher/student/${student.id}`}>
-                <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                <div className="flex items-center gap-4 p-3">
                     <Avatar className="h-10 w-10">
                         <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${student.name}`} alt={student.name} />
                         <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
@@ -115,7 +115,7 @@ function StudentCard({ student }: { student: UserProfile }) {
                         <p className="font-semibold">{student.name}</p>
                         <p className="text-xs text-muted-foreground">{student.email}</p>
                     </div>
-                </CardHeader>
+                </div>
             </Link>
         </Card>
     )
@@ -141,7 +141,20 @@ export function TeacherClasses() {
   }, [user]);
 
   if (loading) {
-    return <div>Cargando clases...</div>;
+    return (
+      <div className="p-4 md:p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="space-y-4 border rounded-lg p-4">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-20 w-full" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -155,22 +168,22 @@ export function TeacherClasses() {
       </div>
 
       {classes.length > 0 ? (
-          <Accordion type="single" collapsible defaultValue={`class-${classes[0].id}`}>
+          <Accordion type="single" collapsible defaultValue={`class-${classes[0].id}`} className="w-full">
             {classes.map((cls) => (
                 <AccordionItem value={`class-${cls.id}`} key={cls.id}>
-                    <AccordionTrigger>
-                        <div className='flex items-center gap-4'>
-                            <h2 className="text-xl font-semibold">{cls.name}</h2>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                                <Users className="mr-2 h-4 w-4" />
-                                {cls.studentCount} {cls.studentCount === 1 ? 'alumno' : 'alumnos'}
+                    <AccordionTrigger className="hover:no-underline">
+                        <div className='flex flex-1 justify-between items-center pr-4'>
+                            <div className="flex items-center gap-4">
+                                <h2 className="text-xl font-semibold text-left">{cls.name}</h2>
+                                <div className="hidden sm:flex items-center text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                                    <Users className="mr-2 h-4 w-4" />
+                                    {cls.studentCount} {cls.studentCount === 1 ? 'alumno' : 'alumnos'}
+                                </div>
                             </div>
+                           <InviteLinkButton classId={cls.id} />
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                        <div className='pb-4'>
-                            <InviteLinkButton classId={cls.id} />
-                        </div>
+                    <AccordionContent className="space-y-4 pt-4">
                         {cls.students.length > 0 ? (
                              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                 {cls.students.map(student => (

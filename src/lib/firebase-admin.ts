@@ -91,7 +91,7 @@ function initializeAdmin() {
 }
 
 // Export a function that initializes and returns the admin instances
-export function getFirebaseAdmin() {
+export async function getFirebaseAdmin() {
   if (!adminApp) {
     initializeAdmin();
   }

@@ -5,8 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 const TimeEntrySchema = z.object({
-  startTime: z.string(), // Use string validation, ISO format is handled by `new Date()`
-  endTime: z.string().nullable(),
+  startTime: z.string(), // ISO String
+  endTime: z.string().nullable(), // ISO String
 });
 
 const UpdateRequestSchema = z.object({
@@ -18,6 +18,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const projectId = params.id;
   
   try {
+    // 1. Authentication
     const { adminAuth, adminDb } = getFirebaseAdmin();
     const authorization = request.headers.get('Authorization');
 
@@ -26,16 +27,29 @@ export async function POST(request: Request, { params }: { params: { id: string 
     }
 
     const token = authorization.substring(7);
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    let decodedToken;
+    try {
+        decodedToken = await adminAuth.verifyIdToken(token);
+    } catch (error: any) {
+        console.error('Error verifying ID token:', error);
+        return NextResponse.json({ message: 'Unauthorized. Invalid token.' }, { status: 401 });
+    }
+    
     const uid = decodedToken.uid;
 
+    // 2. Authorization (Check Project Ownership)
     const projectRef = adminDb.collection('projects').doc(projectId);
     const projectDoc = await projectRef.get();
 
-    if (!projectDoc.exists || projectDoc.data()?.userId !== uid) {
+    if (!projectDoc.exists) {
+      return NextResponse.json({ message: 'Project not found.' }, { status: 404 });
+    }
+
+    if (projectDoc.data()?.userId !== uid) {
       return NextResponse.json({ message: 'Permission denied. You do not own this project.' }, { status: 403 });
     }
 
+    // 3. Validation
     const body = await request.json();
     const validation = UpdateRequestSchema.safeParse(body);
 
@@ -43,11 +57,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ message: 'Invalid request body', errors: validation.error.flatten() }, { status: 400 });
     }
     
+    // 4. Update
     await projectRef.update({
       timeEntries: validation.data.timeEntries,
     });
 
-    // Revalidate paths to reflect updated data immediately
+    // 5. Revalidate and Respond
     revalidatePath(`/projects/${projectId}`);
     revalidatePath(`/`);
 
@@ -67,3 +82,4 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 });
   }
 }
+

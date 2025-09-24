@@ -16,11 +16,10 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { CasCategoryIcon } from '@/components/cas-category-icon';
-import { CheckCircle2, Save, Pencil, X, Undo2 } from 'lucide-react';
+import { CheckCircle2, Save, Pencil, Undo2 } from 'lucide-react';
 import { EvidenceSection } from '@/components/evidence-section';
 import { ReflectionPrompts } from '@/components/reflection-prompts';
 import { TimeTracker } from '@/components/time-tracker';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { DashboardSkeleton } from './dashboard-skeleton';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Terminal, Loader2 } from 'lucide-react';
@@ -137,15 +136,6 @@ export function ProjectDetail() {
     // This case should be covered by the error state, but as a fallback:
     return notFound();
   }
-
-  // Use placeholder evidence for now
-  const evidence = PlaceHolderImages.map((img, index) => ({
-    id: img.id,
-    title: img.description,
-    url: img.imageUrl,
-    type: 'image' as 'image' | 'video' | 'document',
-    date: new Date(),
-  }));
 
   const isAnythingEditing = isEditingDescription || isEditingGoals || isEditingReflections;
 
@@ -304,7 +294,7 @@ export function ProjectDetail() {
 
         <div className="space-y-8 sticky top-24">
           <TimeTracker project={project} />
-          <EvidenceSection evidence={evidence} />
+          <EvidenceSection project={project} />
           <ReflectionPrompts project={project} />
         </div>
       </div>

@@ -15,12 +15,15 @@ export const learningOutcomes = [
 
 export type LearningOutcome = (typeof learningOutcomes)[number];
 
+export type EvidenceType = 'image' | 'video' | 'document' | 'other';
+
 export type Evidence = {
   id: string;
   title: string;
-  type: 'image' | 'video' | 'document';
+  type: EvidenceType;
   url: string;
-  date: Date;
+  date: string; // ISO String
+  fileName: string;
 };
 
 export type TimeEntry = {
@@ -44,20 +47,12 @@ export type Project = {
   userId: string;
 };
 
-export type ProjectDocument = {
-  name: string;
-  description: string;
-  category: CASCategory;
-  startDate: Timestamp;
-  endDate: Timestamp | null;
-  learningOutcomes: LearningOutcome[];
-  personalGoals: string;
-  reflections: string;
-  evidence: Evidence[];
-  progress: 'Planificación' | 'En curso' | 'Completado';
-  timeEntries?: TimeEntry[];
-  userId: string;
-};
+// This is the shape of the data stored in Firestore, using Timestamps
+export type ProjectDocument = Omit<Project, 'id' | 'startDate' | 'endDate' | 'evidence'> & {
+    startDate: Timestamp;
+    endDate: Timestamp | null;
+    evidence: Omit<Evidence, 'date'> & { date: Timestamp }[];
+}
 
 export type UserRole = 'Alumno' | 'Profesor';
 

@@ -2,11 +2,13 @@
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getStorage, Storage } from 'firebase-admin/storage';
 
 // Singleton instances to avoid re-initialization
 let adminApp: App | null = null;
 let adminAuth: Auth | null = null;
 let adminDb: Firestore | null = null;
+let adminStorage: Storage | null = null;
 
 function initializeAdmin() {
     const requiredEnvVars = [
@@ -39,6 +41,7 @@ function initializeAdmin() {
       
     adminAuth = getAuth(adminApp);
     adminDb = getFirestore(adminApp);
+    adminStorage = getStorage(adminApp);
 }
 
 // Export a function that initializes and returns the admin instances
@@ -46,5 +49,5 @@ export function getFirebaseAdmin() {
   if (!adminApp) {
     initializeAdmin();
   }
-  return { adminAuth: adminAuth!, adminDb: adminDb!, adminApp: adminApp! };
+  return { adminAuth: adminAuth!, adminDb: adminDb!, adminApp: adminApp!, adminStorage: adminStorage! };
 }

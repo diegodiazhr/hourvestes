@@ -4,9 +4,11 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getFirebaseAdmin } from './firebase-admin';
-import { LearningOutcome } from './types';
-import { Timestamp } from 'firebase-admin/firestore';
+import { LearningOutcome, type Evidence } from './types';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { cookies } from 'next/headers';
+import { randomUUID } from 'crypto';
+import * as mime from 'mime-types';
 
 async function getUserIdFromToken() {
   const { adminAuth } = getFirebaseAdmin();
@@ -127,4 +129,89 @@ export async function updateProjectDetailsAction(projectId: string, data: z.infe
 
     revalidatePath(`/projects/${projectId}`);
     revalidatePath('/');
+}
+
+// Action to add evidence
+const EvidenceSchema = z.object({
+  title: z.string().min(3, 'El título es requerido.'),
+  file: z
+    .instanceof(File)
+    .refine(file => file.size > 0, 'El archivo no puede estar vacío.'),
+});
+
+function getEvidenceType(mimeType: string): Evidence['type'] {
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType.startsWith('video/')) return 'video';
+    if (mimeType === 'application/pdf' || mimeType.startsWith('application/vnd.openxmlformats-officedocument') || mimeType.startsWith('application/msword')) {
+        return 'document';
+    }
+    return 'other';
+}
+
+
+export async function addEvidenceAction(projectId: string, formData: FormData) {
+    const { adminDb, adminStorage } = getFirebaseAdmin();
+    let uid: string;
+    try {
+        uid = await getUserIdFromToken();
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+
+    const validatedFields = EvidenceSchema.safeParse({
+        title: formData.get('title'),
+        file: formData.get('file'),
+    });
+
+    if (!validatedFields.success) {
+        return { success: false, error: 'Datos de evidencia inválidos.', details: validatedFields.error.flatten() };
+    }
+
+    const { title, file } = validatedFields.data;
+
+    // --- Authorization ---
+    const projectRef = adminDb.collection('projects').doc(projectId);
+    const projectDoc = await projectRef.get();
+    if (!projectDoc.exists || projectDoc.data()?.userId !== uid) {
+        return { success: false, error: 'Permiso denegado.' };
+    }
+    // --- End Authorization ---
+
+    try {
+        const fileBuffer = Buffer.from(await file.arrayBuffer());
+        const fileId = randomUUID();
+        const fileExtension = mime.extension(file.type) || file.name.split('.').pop() || '';
+        const fileName = `${fileId}.${fileExtension}`;
+        const filePath = `evidence/${uid}/${projectId}/${fileName}`;
+
+        const bucket = adminStorage.bucket('gs://studio-6718836827-4de5a.appspot.com');
+        const storageFile = bucket.file(filePath);
+        
+        await storageFile.save(fileBuffer, {
+            metadata: { contentType: file.type },
+        });
+
+        // Make the file public to get a URL
+        await storageFile.makePublic();
+        const publicUrl = storageFile.publicUrl();
+
+        const newEvidence: Omit<Evidence, 'id' | 'date'> & { date: Timestamp } = {
+            title,
+            url: publicUrl,
+            type: getEvidenceType(file.type),
+            fileName: file.name,
+            date: Timestamp.now(),
+        };
+
+        await projectRef.update({
+            evidence: FieldValue.arrayUnion(newEvidence),
+        });
+
+        revalidatePath(`/projects/${projectId}`);
+        return { success: true, data: { ...newEvidence, id: fileId, date: newEvidence.date.toDate().toISOString() }};
+
+    } catch (error) {
+        console.error('Error adding evidence:', error);
+        return { success: false, error: 'No se pudo subir el archivo.' };
+    }
 }

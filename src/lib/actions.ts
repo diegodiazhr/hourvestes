@@ -4,25 +4,9 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getFirebaseAdmin } from './firebase-admin';
-import { LearningOutcome } from './types';
+import { LearningOutcome, TimeEntry } from './types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { cookies } from 'next/headers';
-
-
-// Define the shape of the data coming from the form
-const ProjectDataSchema = z.object({
-  name: z.string().min(3),
-  description: z.string().min(10),
-  category: z.enum(['Creatividad', 'Actividad', 'Servicio']),
-  dates: z.object({
-    from: z.string(), // ISO string
-    to: z.string().optional(), // ISO string
-  }),
-  learningOutcomes: z.array(z.string()),
-  personalGoals: z.string().optional(),
-});
-
-type ProjectData = z.infer<typeof ProjectDataSchema>;
 
 async function getUserIdFromToken() {
   const { adminAuth } = getFirebaseAdmin();
@@ -40,6 +24,22 @@ async function getUserIdFromToken() {
     throw new Error('Authentication token is invalid or expired.');
   }
 }
+
+// Define the shape of the data coming from the form
+const ProjectDataSchema = z.object({
+  name: z.string().min(3),
+  description: z.string().min(10),
+  category: z.enum(['Creatividad', 'Actividad', 'Servicio']),
+  dates: z.object({
+    from: z.string(), // ISO string
+    to: z.string().optional(), // ISO string
+  }),
+  learningOutcomes: z.array(z.string()),
+  personalGoals: z.string().optional(),
+});
+
+type ProjectData = z.infer<typeof ProjectDataSchema>;
+
 
 export async function createProjectAction(data: ProjectData) {
   const { adminDb } = getFirebaseAdmin();
@@ -85,17 +85,16 @@ export async function createProjectAction(data: ProjectData) {
   revalidatePath('/');
 }
 
-export async function updateTimeEntriesAction(projectId: string, timeEntries: any[]) {
-   const { adminDb } = getFirebaseAdmin();
-   if (!adminDb) {
-    throw new Error('Firebase Admin SDK no inicializado. Revisa las variables de entorno del servidor.');
-   }
-  const projectRef = adminDb.collection('projects').doc(projectId);
-  
-  try {
-    // Before updating, we should verify the user owns this project.
-    const uid = await getUserIdFromToken();
+export async function updateTimeEntriesAction(projectId: string, timeEntries: TimeEntry[], token: string) {
+   const { adminAuth, adminDb } = getFirebaseAdmin();
+
+   try {
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    const uid = decodedToken.uid;
+    
+    const projectRef = adminDb.collection('projects').doc(projectId);
     const projectDoc = await projectRef.get();
+    
     if (!projectDoc.exists || projectDoc.data()?.userId !== uid) {
       throw new Error('Permission denied. You do not own this project.');
     }
@@ -109,7 +108,7 @@ export async function updateTimeEntriesAction(projectId: string, timeEntries: an
   } catch (error) {
     console.error('Error updating time entries:', error);
     if(error instanceof Error) {
-        throw error;
+        throw new Error(error.message);
     }
     throw new Error('No se pudieron actualizar las entradas de tiempo.');
   }

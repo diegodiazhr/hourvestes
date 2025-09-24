@@ -58,15 +58,25 @@ export function TimeTracker({ project }: { project: Project }) {
   }, [activeEntry]);
 
   const handleTimeUpdate = async (updatedEntries: TimeEntry[]) => {
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Error de autenticación',
+            description: 'Debes iniciar sesión para registrar tiempo.',
+        });
+        return;
+    }
+
     setIsPending(true);
     try {
-        await updateTimeEntriesAction(project.id, updatedEntries);
+        const token = await user.getIdToken();
+        await updateTimeEntriesAction(project.id, updatedEntries, token);
         setTimeEntries(updatedEntries);
-    } catch (e) {
+    } catch (e: any) {
         toast({
             variant: 'destructive',
             title: 'Error',
-            description: 'No se pudo actualizar el registro de tiempo.',
+            description: e.message || 'No se pudo actualizar el registro de tiempo.',
         });
     } finally {
         setIsPending(false);

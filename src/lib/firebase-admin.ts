@@ -15,7 +15,7 @@ function initializeAdmin() {
         'FIREBASE_PROJECT_ID',
         'FIREBASE_PRIVATE_KEY',
         'FIREBASE_CLIENT_EMAIL',
-        'FIREBASE_STORAGE_BUCKET', // Added storage bucket
+        'FIREBASE_STORAGE_BUCKET',
     ];
 
     const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
@@ -35,7 +35,7 @@ function initializeAdmin() {
     if (!getApps().length) {
         adminApp = initializeApp({
           credential: cert(serviceAccount),
-          storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // Use the env var here
+          storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
         });
       } else {
         adminApp = getApps()[0];

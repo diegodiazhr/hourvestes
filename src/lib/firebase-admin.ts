@@ -3,6 +3,12 @@ import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getStorage, Storage } from 'firebase-admin/storage';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from .env file at the root of the project
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
 
 // Singleton instances to avoid re-initialization
 let adminApp: App | null = null;
@@ -23,6 +29,7 @@ function initializeAdmin() {
     if (missingEnvVars.length > 0) {
         const errorMessage = `Firebase Admin SDK configuration is missing. Check server environment variables. Missing: ${missingEnvVars.join(', ')}`;
         console.error(errorMessage);
+        // We throw the error here to ensure the application fails fast if configuration is missing.
         throw new Error(errorMessage);
     }
     

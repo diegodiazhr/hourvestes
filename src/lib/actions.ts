@@ -134,9 +134,8 @@ export async function updateProjectDetailsAction(projectId: string, data: z.infe
 // Action to add evidence
 const EvidenceSchema = z.object({
   title: z.string().min(3, 'El título es requerido.'),
-  file: z
-    .instanceof(File)
-    .refine(file => file.size > 0, 'El archivo no puede estar vacío.'),
+  file: z.any()
+    .refine((file): file is File => file instanceof File && file.size > 0, 'El archivo no puede estar vacío.')
 });
 
 function getEvidenceType(mimeType: string): Evidence['type'] {

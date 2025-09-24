@@ -184,7 +184,7 @@ export async function addEvidenceAction(projectId: string, formData: FormData) {
         const fileName = `${fileId}.${fileExtension}`;
         const filePath = `evidence/${uid}/${projectId}/${fileName}`;
 
-        const bucket = adminStorage.bucket('gs://studio-6718836827-4de5a.appspot.com');
+        const bucket = adminStorage.bucket(); // No need to pass bucket name here
         const storageFile = bucket.file(filePath);
         
         await storageFile.save(fileBuffer, {
@@ -210,8 +210,8 @@ export async function addEvidenceAction(projectId: string, formData: FormData) {
         revalidatePath(`/projects/${projectId}`);
         return { success: true, data: { ...newEvidence, id: fileId, date: newEvidence.date.toDate().toISOString() }};
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error adding evidence:', error);
-        return { success: false, error: 'No se pudo subir el archivo.' };
+        return { success: false, error: 'No se pudo subir el archivo. ' + (error.message || '') };
     }
 }

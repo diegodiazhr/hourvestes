@@ -11,7 +11,7 @@ import { randomUUID } from 'crypto';
 import * as mime from 'mime-types';
 
 async function getUserIdFromToken() {
-  const { adminAuth } = getFirebaseAdmin();
+  const { adminAuth } = await getFirebaseAdmin();
   const token = cookies().get('fb-token')?.value;
 
   if (!token) {
@@ -44,7 +44,7 @@ type ProjectData = z.infer<typeof ProjectDataSchema>;
 
 
 export async function createProjectAction(data: ProjectData) {
-  const { adminDb } = getFirebaseAdmin();
+  const { adminDb } = await getFirebaseAdmin();
   let uid: string;
   try {
      uid = await getUserIdFromToken();
@@ -95,7 +95,7 @@ const UpdateProjectDetailsSchema = z.object({
 });
 
 export async function updateProjectDetailsAction(projectId: string, data: z.infer<typeof UpdateProjectDetailsSchema>) {
-    const { adminDb } = getFirebaseAdmin();
+    const { adminDb } = await getFirebaseAdmin();
     let uid: string;
     try {
         uid = await getUserIdFromToken();
@@ -150,7 +150,7 @@ function getEvidenceType(mimeType: string): Evidence['type'] {
 
 
 export async function addEvidenceAction(projectId: string, formData: FormData) {
-    const { adminDb, adminStorage } = getFirebaseAdmin();
+    const { adminDb, adminStorage } = await getFirebaseAdmin();
     let uid: string;
     try {
         uid = await getUserIdFromToken();
@@ -222,7 +222,7 @@ const CreateClassSchema = z.object({
 });
 
 export async function createClassAction(formData: FormData) {
-  const { adminDb } = getFirebaseAdmin();
+  const { adminDb } = await getFirebaseAdmin();
   const uid = await getUserIdFromToken();
   const userProfile = (await adminDb.collection('users').doc(uid).get()).data();
 
@@ -264,7 +264,7 @@ const SchoolSettingsSchema = z.object({
 });
 
 export async function updateSchoolSettingsAction(formData: FormData) {
-    const { adminDb, adminStorage } = getFirebaseAdmin();
+    const { adminDb, adminStorage } = await getFirebaseAdmin();
     const uid = await getUserIdFromToken();
 
     const aiEnabled = formData.get('aiEnabled') === 'true';
@@ -326,3 +326,5 @@ export async function updateSchoolSettingsAction(formData: FormData) {
         return { success: false, error: 'No se pudieron guardar los ajustes. ' + error.message };
     }
 }
+
+    

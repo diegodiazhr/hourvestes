@@ -19,7 +19,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   
   try {
     // 1. Authentication
-    const { adminAuth, adminDb } = getFirebaseAdmin();
+    const { adminAuth, adminDb } = await getFirebaseAdmin();
     const authorization = request.headers.get('Authorization');
 
     if (!authorization?.startsWith('Bearer ')) {
@@ -83,3 +83,4 @@ export async function POST(request: Request, { params }: { params: { id: string 
   }
 }
 
+    

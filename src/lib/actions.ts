@@ -184,7 +184,7 @@ export async function addEvidenceAction(projectId: string, formData: FormData) {
         const fileName = `${fileId}.${fileExtension}`;
         const filePath = `evidence/${uid}/${projectId}/${fileName}`;
 
-        const bucket = adminStorage.bucket(); // No need to pass bucket name here
+        const bucket = adminStorage.bucket(); // This will now use the default bucket from initialization
         const storageFile = bucket.file(filePath);
         
         await storageFile.save(fileBuffer, {

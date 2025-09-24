@@ -1,17 +1,40 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Proyectos
-    match /projects/{projectId} {
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+
+    // Helper function to check ownership
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
-    // Perfiles de usuario
+    // Users collection
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Allow users to read and update their own profile
+      allow read, update: if isOwner(userId);
+      // Allow teachers to read their students' profiles
+      allow read: if exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                   resource.data.teacherId == request.auth.uid &&
+                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor';
+    }
+
+    // Projects collection
+    match /projects/{projectId} {
+      // Allow users to create projects for themselves
+      allow create: if isOwner(request.resource.data.userId);
+      // Allow users to read, update, and delete their own projects
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+    
+    // Classes collection
+    match /classes/{classId} {
+      // Allow teachers to create classes
+      allow create: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor';
+      // Allow the teacher who owns the class to read it
+      allow read: if resource.data.teacherId == request.auth.uid;
+      // Public read for registration purposes
+      allow get: if true; 
     }
   }
 }

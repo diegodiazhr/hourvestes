@@ -58,7 +58,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     return null;
 }
 
-export function onStudentsUpdate(teacherId: string, callback: (students: UserProfile[]) => void) {
+export function onStudentsUpdate(teacherId: string, callback: (students: UserProfile[]) => void, onError: (error: Error) => void) {
     if (!db) {
         console.error("Firestore is not initialized for onStudentsUpdate.");
         return () => {}; // Return an empty unsubscribe function
@@ -84,6 +84,9 @@ export function onStudentsUpdate(teacherId: string, callback: (students: UserPro
         };
       });
       callback(studentList);
+    }, (error) => {
+        console.error("Error in onStudentsUpdate snapshot listener: ", error);
+        onError(error);
     });
   
     return unsubscribe;

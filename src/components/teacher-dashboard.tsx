@@ -123,6 +123,8 @@ export default function TeacherDashboard() {
   >([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (userProfile && userProfile.role === 'Profesor') {
@@ -130,6 +132,7 @@ export default function TeacherDashboard() {
         userProfile.id,
         async (studentProfiles) => {
           setLoading(true);
+          setError(null);
           const studentsWithHours = await Promise.all(
             studentProfiles.map(async (student) => {
               const projects = await getProjectsForStudent(student.id);
@@ -169,13 +172,22 @@ export default function TeacherDashboard() {
           setActivities(flattenedProjects.slice(0, 5)); 
 
           setLoading(false);
+        },
+        (err) => {
+            setError('No se pudieron cargar los datos de los alumnos. Es posible que no tengas permisos para verlos. Revisa las reglas de seguridad de Firestore.');
+            setLoading(false);
+            toast({
+                variant: 'destructive',
+                title: 'Error de permisos',
+                description: 'No se pudieron cargar los datos de los alumnos. Contacta con el administrador.'
+            })
         }
       );
       return () => unsubscribe();
     } else if (userProfile) {
       setLoading(false);
     }
-  }, [userProfile]);
+  }, [userProfile, toast]);
 
   const stats = useMemo(() => {
     const totalStudents = students.length;
@@ -291,6 +303,8 @@ export default function TeacherDashboard() {
                                 <TableBody>
                                 {loading ? (
                                     <TableRow><TableCell colSpan={3} className="text-center">Cargando...</TableCell></TableRow>
+                                ) : error ? (
+                                    <TableRow><TableCell colSpan={3} className="text-center text-destructive">{error}</TableCell></TableRow>
                                 ) : activities.length > 0 ? (
                                     activities.map(activity => (
                                     <TableRow key={activity.id}>

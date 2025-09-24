@@ -1,5 +1,4 @@
 
-
 import { collection, getDocs, doc, getDoc, orderBy, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Project, ProjectDocument, UserProfile } from './types';
@@ -15,6 +14,10 @@ function docToProject(doc: ProjectDocument, id: string): Project {
 
 
 export async function getProjects(userId: string): Promise<Project[]> {
+    if (!db) {
+        console.error("Firestore is not initialized. Make sure you are calling this function on the client side.");
+        return [];
+    }
     const projectsCol = collection(db, 'projects');
     const q = query(projectsCol, where('userId', '==', userId), orderBy('startDate', 'desc'));
     const projectSnapshot = await getDocs(q);
@@ -26,6 +29,7 @@ export async function getProjects(userId: string): Promise<Project[]> {
 }
 
 export async function getProject(id: string): Promise<Project | null> {
+    if (!db) return null;
     const projectDocRef = doc(db, 'projects', id);
     const projectDoc = await getDoc(projectDocRef);
     if (projectDoc.exists()) {
@@ -36,6 +40,7 @@ export async function getProject(id: string): Promise<Project | null> {
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+    if (!db) return null;
     const userDocRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userDocRef);
     if(userDoc.exists()) {
@@ -53,6 +58,10 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 }
 
 export function onStudentsUpdate(teacherId: string, callback: (students: UserProfile[]) => void) {
+    if (!db) {
+        console.error("Firestore is not initialized for onStudentsUpdate.");
+        return () => {}; // Return an empty unsubscribe function
+    }
     const usersCol = collection(db, 'users');
     const q = query(
       usersCol,
@@ -79,6 +88,10 @@ export function onStudentsUpdate(teacherId: string, callback: (students: UserPro
 }
 
 export async function getProjectsForStudent(studentId: string): Promise<Project[]> {
+    if (!db) {
+        console.error("Firestore is not initialized. Make sure you are calling this function on the client side.");
+        return [];
+    }
     const projectsCol = collection(db, 'projects');
     const q = query(projectsCol, where('userId', '==', studentId), orderBy('startDate', 'desc'));
     const projectSnapshot = await getDocs(q);
@@ -88,4 +101,3 @@ export async function getProjectsForStudent(studentId: string): Promise<Project[
     });
     return projectList;
 }
-

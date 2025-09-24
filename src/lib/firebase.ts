@@ -12,19 +12,27 @@ const firebaseConfig = {
     "messagingSenderId": "577171585378"
 };
 
+
+// Singleton pattern to initialize Firebase on the client side
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-if (typeof window !== 'undefined') {
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApp();
-  }
-  auth = getAuth(app);
-  db = getFirestore(app);
+function initializeFirebase() {
+    if (typeof window !== 'undefined') {
+        if (!getApps().length) {
+            app = initializeApp(firebaseConfig);
+        } else {
+            app = getApp();
+        }
+        auth = getAuth(app);
+        db = getFirestore(app);
+    }
 }
 
-// @ts-ignore: app, auth, and db will be defined on the client.
+// Initialize on script load
+initializeFirebase();
+
+// Export instances. On the server, they will be undefined, which is handled
+// by server-side code using firebase-admin.
 export { app, auth, db };

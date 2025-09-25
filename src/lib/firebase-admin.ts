@@ -30,9 +30,9 @@ function getServiceAccount() {
 }
 
 function getStorageBucket() {
-    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${process.env.AUTH_FIREBASE_PROJECT_ID}.appspot.com`;
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
     if (!bucketName) {
-        throw new Error('Firebase Storage bucket name could not be determined.');
+        throw new Error('Firebase Storage bucket name could not be determined. Make sure NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is set.');
     }
     return bucketName;
 }
@@ -60,4 +60,3 @@ export async function getFirebaseAdmin() {
   
   return { adminAuth, adminDb, adminApp: app, adminStorage };
 }
-

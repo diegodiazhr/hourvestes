@@ -184,7 +184,11 @@ export async function addEvidenceAction(projectId: string, formData: FormData) {
         const fileName = `${fileId}.${fileExtension}`;
         const filePath = `evidence/${uid}/${projectId}/${fileName}`;
 
-        const bucket = adminStorage.bucket();
+        const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+        if (!bucketName) {
+            throw new Error("Firebase Storage bucket name is not configured. Please set NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET environment variable.");
+        }
+        const bucket = adminStorage.bucket(bucketName);
         const storageFile = bucket.file(filePath);
         
         await storageFile.save(fileBuffer, {
@@ -292,8 +296,12 @@ export async function updateSchoolSettingsAction(formData: FormData) {
             const fileId = randomUUID();
             const fileExtension = mime.extension(logoFile.type) || 'png';
             const fileName = `logos/${schoolId}-${fileId}.${fileExtension}`;
-
-            const bucket = adminStorage.bucket();
+            
+            const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+            if (!bucketName) {
+                throw new Error("Firebase Storage bucket name is not configured.");
+            }
+            const bucket = adminStorage.bucket(bucketName);
             const storageFile = bucket.file(fileName);
             
             await storageFile.save(fileBuffer, { metadata: { contentType: logoFile.type, cacheControl: 'public, max-age=31536000' } });
@@ -326,5 +334,3 @@ export async function updateSchoolSettingsAction(formData: FormData) {
         return { success: false, error: 'No se pudieron guardar los ajustes. ' + error.message };
     }
 }
-
-    

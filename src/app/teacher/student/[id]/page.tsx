@@ -83,8 +83,8 @@ export default function StudentDetailPage() {
   }, [studentId]);
 
   const handleExportPdf = async () => {
-    if (!student || !projects || !school) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pueden generar el informe porque faltan datos.' });
+    if (!student || !projects) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pueden generar el informe porque faltan datos del alumno o los proyectos.' });
         return;
     };
     setIsGeneratingPdf(true);

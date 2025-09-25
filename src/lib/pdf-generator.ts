@@ -18,19 +18,21 @@ function formatDuration(milliseconds: number) {
 export async function generateStudentReport(
   student: UserProfile,
   projects: Project[],
-  school: School
+  school: School | null
 ) {
   const doc = new jsPDF();
+  const schoolInfo = school ?? { name: student.school || 'Institución no especificada' };
+
 
   // --- PDF Header ---
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
   doc.text('Informe de Progreso CAS', 105, 20, { align: 'center' });
   
-  if (school.logoUrl) {
+  if (schoolInfo.logoUrl) {
     try {
       // This is a workaround to bypass CORS issues when loading images from GCS in jsPDF
-      const response = await fetch(`https://cors-anywhere.herokuapp.com/${school.logoUrl}`);
+      const response = await fetch(`https://cors-anywhere.herokuapp.com/${schoolInfo.logoUrl}`);
       const blob = await response.blob();
       const dataUrl = await new Promise<string>(resolve => {
         const reader = new FileReader();
@@ -49,7 +51,7 @@ export async function generateStudentReport(
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
-  doc.text(school.name, 105, 36, { align: 'center' });
+  doc.text(schoolInfo.name, 105, 36, { align: 'center' });
   doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy')}`, 105, 42, { align: 'center' });
 
 
@@ -109,13 +111,15 @@ export async function generateStudentReport(
       doc.text('Registro de Tiempo:', 15, yPos);
       yPos += 6;
 
-      const timeBody = project.timeEntries.map(entry => {
-        const durationMs = new Date(entry.endTime!).getTime() - new Date(entry.startTime).getTime();
-        return [
-            format(new Date(entry.startTime), 'dd/MM/yy'),
-            entry.manual ? 'Entrada Manual' : `${format(new Date(entry.startTime), 'HH:mm')} - ${format(new Date(entry.endTime!), 'HH:mm')}`,
-            formatDuration(durationMs)
-        ];
+      const timeBody = project.timeEntries
+        .filter(entry => entry.endTime)
+        .map(entry => {
+            const durationMs = new Date(entry.endTime!).getTime() - new Date(entry.startTime).getTime();
+            return [
+                format(new Date(entry.startTime), 'dd/MM/yy'),
+                entry.manual ? 'Entrada Manual' : `${format(new Date(entry.startTime), 'HH:mm')} - ${format(new Date(entry.endTime!), 'HH:mm')}`,
+                formatDuration(durationMs)
+            ];
       });
 
       const totalTimeMs = project.timeEntries.reduce((acc, entry) => {

@@ -1,4 +1,3 @@
-
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -12,8 +11,6 @@ import {
   Menu,
   Bell,
   Target,
-  FolderKanban,
-  FileClock,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { getProjectsForStudent, getClassesForTeacher } from '@/lib/data';
@@ -81,8 +78,8 @@ function LeftSidebarNav() {
     return (
         <div className="flex h-full max-h-screen flex-col">
             <div className="flex h-14 items-center px-6 lg:h-[60px]">
-                <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary">
-                     <svg fill="hsl(var(--primary))" height="24px" width="24px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M29.5,8.5L16,1.5L2.5,8.5l13.5,7L29.5,8.5z M2,11.3l13.5,6.9v10.3L2,21.6V11.3z M16.5,28.5v-10.3L30,11.3v10.3L16.5,28.5z"/></svg>
+                 <Link href="/" className="flex items-center gap-2 text-xl font-bold font-headline text-primary hover:text-primary/80 transition-colors">
+                    <svg fill="hsl(var(--primary))" height="24px" width="24px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M29.5,8.5L16,1.5L2.5,8.5l13.5,7L29.5,8.5z M2,11.3l13.5,6.9v10.3L2,21.6V11.3z M16.5,28.5v-10.3L30,11.3v10.3L16.5,28.5z"/></svg>
                     <span className="text-sidebar-foreground">HourVest</span>
                 </Link>
             </div>
@@ -148,12 +145,20 @@ export default function TeacherDashboard() {
             const fetchedClasses = await getClassesForTeacher(userProfile.id);
             setClasses(fetchedClasses);
 
-            const studentProfiles = fetchedClasses.flatMap(c => c.students.map(s => ({...s, className: c.name})));
+            const allStudentsFromClasses = fetchedClasses.flatMap(c => c.students.map(s => ({...s, className: c.name})));
             
-            const studentsWithHours = await Promise.all(
-              studentProfiles.map(async (student) => {
-                const projects = await getProjectsForStudent(student.id);
-                const totalMilliseconds = projects.reduce((acc, project) => {
+            const projectsPromises = allStudentsFromClasses.map(student => getProjectsForStudent(student.id));
+            const allProjectsPerStudent = await Promise.all(projectsPromises);
+            
+            const allActivities: ActivityItem[] = [];
+            const studentsWithHours = allStudentsFromClasses.map((student, index) => {
+                const studentProjects = allProjectsPerStudent[index];
+                
+                studentProjects.forEach(p => {
+                    allActivities.push({ ...p, studentName: student.name });
+                });
+
+                const totalMilliseconds = studentProjects.reduce((acc, project) => {
                   const projectTime =
                     project.timeEntries?.reduce((timeAcc, entry) => {
                       if (entry.endTime) {
@@ -164,19 +169,12 @@ export default function TeacherDashboard() {
                   return acc + projectTime;
                 }, 0);
                 const totalHours = totalMilliseconds / (1000 * 60 * 60);
-                return { ...student, totalHours };
-              })
-            );
-            setStudents(studentsWithHours);
 
-            const allProjects = await Promise.all(
-              studentProfiles.map(async (student) => {
-                const studentProjects = await getProjectsForStudent(student.id);
-                return studentProjects.map((p) => ({ ...p, studentName: student.name }));
-              })
-            );
-            const flattenedProjects = allProjects.flat().sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-            setActivities(flattenedProjects); 
+                return { ...student, totalHours };
+            });
+
+            setStudents(studentsWithHours);
+            setActivities(allActivities.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())); 
 
         } catch (e: any) {
             setError('Error al cargar los datos del panel.');
@@ -221,6 +219,7 @@ export default function TeacherDashboard() {
     if (students.length === 0) return 0;
     const totalPossibleHours = students.length * GOAL_HOURS;
     const totalActualHours = students.reduce((sum, s) => sum + s.totalHours, 0);
+    if (totalPossibleHours === 0) return 0;
     return Math.min((totalActualHours / totalPossibleHours) * 100, 100);
   }, [students]);
   

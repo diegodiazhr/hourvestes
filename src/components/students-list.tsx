@@ -2,12 +2,11 @@
 'use client';
 import Link from 'next/link';
 import type { UserProfile } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from './ui/separator';
 
 function StudentProgressCard({ student }: { student: UserProfile & { totalHours: number, className?: string } }) {
-
     return (
          <Link href={`/teacher/student/${student.id}`} className="block hover:bg-muted/50 rounded-md p-2 -mx-2">
             <div className="flex justify-between items-center">

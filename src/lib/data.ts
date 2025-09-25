@@ -3,7 +3,8 @@ import { collection, getDocs, doc, getDoc, orderBy, query, where, onSnapshot, Do
 import { db } from './firebase';
 import type { Project, ProjectDocument, UserProfile, Class, ClassDocument, School, SchoolDocument } from './types';
 
-function docToProject(doc: ProjectDocument, id: string): Project {
+function docToProject(data: DocumentData, id: string): Project {
+    const doc = data as ProjectDocument;
     return {
         id,
         ...doc,
@@ -24,7 +25,7 @@ function docToSchool(doc: SchoolDocument, id: string): School {
     return {
         id,
         ...doc,
-        casEndDate: doc.casEndDate?.toDate(),
+        casEndDate: doc.casEndDate ? doc.casEndDate.toDate() : undefined,
     };
 }
 
@@ -87,7 +88,9 @@ export function onStudentsUpdate(teacherId: string, callback: (students: UserPro
     );
   
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const studentList = snapshot.docs.map(doc => {
+      const studentList = snapshot.docs
+      .filter(doc => doc.exists()) // Ensure document exists
+      .map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -116,10 +119,11 @@ export async function getProjectsForStudent(studentId: string): Promise<Project[
     const projectsCol = collection(db, 'projects');
     const q = query(projectsCol, where('userId', '==', studentId), orderBy('startDate', 'desc'));
     const projectSnapshot = await getDocs(q);
-    const projectList = projectSnapshot.docs.map(doc => {
-        const data = doc.data() as ProjectDocument;
-        return docToProject(data, doc.id);
-    });
+    const projectList = projectSnapshot.docs
+        .filter(doc => doc.exists()) // Ensure document exists before processing
+        .map(doc => {
+            return docToProject(doc.data(), doc.id);
+        });
     return projectList;
 }
 

@@ -13,12 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { es } from 'date-fns/locale';
-import { format, formatDistanceToNowStrict } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
 function formatDuration(milliseconds: number) {
-  if (milliseconds < 0) milliseconds = 0;
+  if (milliseconds < 0 || isNaN(milliseconds)) milliseconds = 0;
   const totalSeconds = Math.floor(milliseconds / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -115,6 +115,7 @@ export function TimeTracker({ project }: { project: Project }) {
   const { toast } = useToast();
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(project.timeEntries || []);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const activeEntry = useMemo(() => timeEntries.find(entry => entry.endTime === null) || null, [timeEntries]);
   
@@ -130,15 +131,16 @@ export function TimeTracker({ project }: { project: Project }) {
   }, [timeEntries]);
 
 
-  const [elapsedTime, setElapsedTime] = useState(0);
-
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (activeEntry) {
+      // Set initial elapsed time
+      const start = new Date(activeEntry.startTime).getTime();
+      setElapsedTime(Date.now() - start);
+
+      // Update every second
       interval = setInterval(() => {
-        const start = new Date(activeEntry.startTime).getTime();
-        const now = new Date().getTime();
-        setElapsedTime(now - start);
+        setElapsedTime(Date.now() - start);
       }, 1000);
     } else {
       setElapsedTime(0);
@@ -235,7 +237,7 @@ export function TimeTracker({ project }: { project: Project }) {
     })
   }
 
-  const displayTime = formatDuration(totalTime + elapsedTime);
+  const displayTime = useMemo(() => formatDuration(totalTime + elapsedTime), [totalTime, elapsedTime]);
 
   const sortedEntries = useMemo(() => {
     return [...timeEntries].sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());

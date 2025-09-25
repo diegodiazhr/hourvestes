@@ -3,39 +3,52 @@ import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Users,
-  BarChart2,
-  CheckCircle,
   Home,
   Building,
   LogOut,
-  Copy,
   Search,
   FolderKanban,
   Menu,
+  Bell,
+  Activity,
+  Clock,
+  Paintbrush,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { onStudentsUpdate, getProjectsForStudent } from '@/lib/data';
-import type { UserProfile, Project } from '@/lib/types';
+import { onStudentsUpdate, getProjectsForStudent, getClassesForTeacher } from '@/lib/data';
+import type { UserProfile, Project, Class } from '@/lib/types';
 import { GOAL_HOURS } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import StudentsList from './students-list';
+import { TimeSummaryChart } from './time-summary-chart';
+import { Progress } from '@/components/ui/progress';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
+import { CasCategoryIcon } from './cas-category-icon';
 
-type Activity = Project & { studentName: string };
+type ActivityItem = Project & { studentName: string };
+
 
 function LeftSidebarNav() {
     const router = useRouter();
@@ -45,18 +58,18 @@ function LeftSidebarNav() {
     };
 
     return (
-        <div className="flex h-full max-h-screen flex-col gap-2">
-            <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                <Link href="/" className="flex items-center gap-2 font-semibold">
-                    <div className="bg-primary text-primary-foreground rounded-lg p-2">
-                        <Users className="h-5 w-5" />
+        <div className="flex h-full max-h-screen flex-col">
+            <div className="flex h-14 items-center px-4 lg:h-[60px] lg:px-6">
+                <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary">
+                     <div className="bg-primary text-primary-foreground rounded-lg p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                     </div>
-                    <span className="">HourVest</span>
+                    <span>HOURVEST</span>
                 </Link>
             </div>
-            <div className="flex-1">
-                <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-                    <Link href="/" className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary">
+            <div className="flex-1 mt-4">
+                <nav className="grid items-start px-4 text-sm font-medium">
+                    <Link href="/" className="flex items-center gap-3 rounded-lg bg-primary px-3 py-2 text-primary-foreground transition-all">
                         <Home className="h-4 w-4" />
                         Inicio
                     </Link>
@@ -72,36 +85,37 @@ function LeftSidebarNav() {
                         <Building className="h-4 w-4" />
                         Colegio
                     </Link>
+                     <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground/50 transition-all cursor-not-allowed">
+                        <Clock className="h-4 w-4" />
+                        Pronto más opciones...
+                    </Link>
                 </nav>
-            </div>
-            <div className="mt-auto p-4">
-                <Button size="sm" variant="ghost" className="w-full justify-start text-muted-foreground" onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Cerrar Sesión
-                </Button>
             </div>
         </div>
     );
 }
 
 export default function TeacherDashboard() {
-  const { userProfile } = useAuth();
-  const [students, setStudents] = useState<
-    (UserProfile & { totalHours: number })[]
-  >([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { userProfile, loading: authLoading } = useAuth();
+  const [students, setStudents] = useState<(UserProfile & { totalHours: number, classId?: string, className?: string })[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     if (userProfile && userProfile.role === 'Profesor') {
-      const unsubscribe = onStudentsUpdate(
-        userProfile.id,
-        async (studentProfiles) => {
-          setLoading(true);
-          setError(null);
-          try {
+      const fetchInitialData = async () => {
+        setLoadingData(true);
+        setError(null);
+        try {
+            const fetchedClasses = await getClassesForTeacher(userProfile.id);
+            setClasses(fetchedClasses);
+
+            const studentProfiles = fetchedClasses.flatMap(c => c.students.map(s => ({...s, className: c.name})));
+            
             const studentsWithHours = await Promise.all(
               studentProfiles.map(async (student) => {
                 const projects = await getProjectsForStudent(student.id);
@@ -109,9 +123,7 @@ export default function TeacherDashboard() {
                   const projectTime =
                     project.timeEntries?.reduce((timeAcc, entry) => {
                       if (entry.endTime) {
-                        const start = new Date(entry.startTime).getTime();
-                        const end = new Date(entry.endTime).getTime();
-                        return timeAcc + (end - start);
+                        return timeAcc + (new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime());
                       }
                       return timeAcc;
                     }, 0) || 0;
@@ -126,69 +138,67 @@ export default function TeacherDashboard() {
             const allProjects = await Promise.all(
               studentProfiles.map(async (student) => {
                 const studentProjects = await getProjectsForStudent(student.id);
-                return studentProjects.map((p) => ({
-                  ...p,
-                  studentName: student.name,
-                }));
+                return studentProjects.map((p) => ({ ...p, studentName: student.name }));
               })
             );
+            const flattenedProjects = allProjects.flat().sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+            setActivities(flattenedProjects); 
 
-            const flattenedProjects = allProjects.flat();
-            flattenedProjects.sort(
-              (a, b) =>
-                new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-            );
-            setActivities(flattenedProjects.slice(0, 5)); 
-
-            setLoading(false);
-          } catch (e: any) {
-            setError('Error al procesar los datos de los alumnos.');
+        } catch (e: any) {
+            setError('Error al cargar los datos del panel.');
             console.error(e);
-            setLoading(false);
-          }
-        },
-        (err) => {
-            setError('No se pudieron cargar los datos de los alumnos. Es posible que no tengas permisos para verlos. Revisa las reglas de seguridad de Firestore.');
-            setLoading(false);
-            toast({
+             toast({
                 variant: 'destructive',
-                title: 'Error de permisos',
-                description: 'No se pudieron cargar los datos de los alumnos. Contacta con el administrador.'
+                title: 'Error de carga',
+                description: 'No se pudieron cargar los datos de los alumnos y clases.'
             })
+        } finally {
+            setLoadingData(false);
         }
-      );
-      return () => unsubscribe();
-    } else if (userProfile) {
-      // User is not a teacher
-      setLoading(false);
+      };
+      
+      fetchInitialData();
+
+    } else if (!authLoading && userProfile?.role !== 'Profesor') {
+        router.push('/');
     }
-  }, [userProfile, toast]);
+  }, [userProfile, authLoading, router, toast]);
 
   const stats = useMemo(() => {
     const totalStudents = students.length;
     const studentsCompleted = students.filter(
       (s) => s.totalHours >= GOAL_HOURS
     ).length;
-    const totalHours = students.reduce((acc, s) => acc + s.totalHours, 0);
-    const averageProgress =
-      totalStudents > 0
-        ? (totalHours / (totalStudents * GOAL_HOURS)) * 100
-        : 0;
-
     return {
       totalStudents,
       studentsCompleted,
-      averageProgress: Math.min(averageProgress, 100),
+      totalClasses: classes.length,
     };
+  }, [students, classes]);
+  
+  const handleSignOut = async () => {
+    await auth.signOut();
+    router.push('/login');
+  };
+
+  const loading = authLoading || loadingData;
+
+  const averageProgress = useMemo(() => {
+    if (students.length === 0) return 0;
+    const totalPossibleHours = students.length * GOAL_HOURS;
+    const totalActualHours = students.reduce((sum, s) => sum + s.totalHours, 0);
+    return Math.min((totalActualHours / totalPossibleHours) * 100, 100);
   }, [students]);
+  
+  const radialChartData = [{ name: 'progress', value: averageProgress, fill: 'hsl(var(--primary))' }];
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-muted/40 md:block">
+    <div className="grid min-h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-card md:block">
         <LeftSidebarNav />
       </div>
-      <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+      <div className="flex flex-col bg-muted/40">
+        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="shrink-0 md:hidden">
@@ -196,7 +206,7 @@ export default function TeacherDashboard() {
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col p-0">
+            <SheetContent side="left" className="flex flex-col p-0 bg-card">
               <LeftSidebarNav />
             </SheetContent>
           </Sheet>
@@ -207,46 +217,68 @@ export default function TeacherDashboard() {
                 <Input
                   type="search"
                   placeholder="Buscar alumnos..."
-                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+                  className="w-full appearance-none bg-muted/40 pl-8 shadow-none md:w-2/3 lg:w-1/3"
                 />
               </div>
             </form>
           </div>
-          <Avatar className="h-9 w-9">
-              <AvatarImage src={userProfile ? `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile.name}`: ''} />
-              <AvatarFallback>{userProfile?.name.charAt(0)}</AvatarFallback>
-          </Avatar>
+          <Button variant="ghost" size="icon">
+            <Bell className="h-5 w-5"/>
+          </Button>
+          <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-9 w-9">
+                        <AvatarImage src={userProfile ? `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile.name}`: ''} />
+                        <AvatarFallback>{userProfile?.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{userProfile?.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                        {userProfile?.email}
+                    </p>
+                    </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Cerrar Sesión</span>
+                </DropdownMenuItem>
+                </DropdownMenuContent>
+          </DropdownMenu>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl">Inicio</h1>
+            <div className="flex items-center">
+                <h1 className="text-2xl font-semibold">Hola {userProfile?.name.split(' ')[0]} 👋</h1>
             </div>
+            <p className="text-sm text-muted-foreground -mt-4">Inicio</p>
 
             <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Total de Alumnos</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total de Alumnos</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{loading ? "..." : stats.totalStudents}</div>
-                  <p className="text-xs text-muted-foreground">Alumnos vinculados a tu cuenta</p>
+                  <p className="text-xs text-muted-foreground">Alumnos vinculados a tu Institución Educativa</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Progreso Medio</CardTitle>
-                  <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Clases Gestionadas</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{loading ? "..." : `${stats.averageProgress.toFixed(0)}%`}</div>
-                  <p className="text-xs text-muted-foreground">del total de horas CAS completado</p>
+                  <div className="text-2xl font-bold">{loading ? "..." : stats.totalClasses}</div>
+                  <p className="text-xs text-muted-foreground">Cantidad de clases creadas</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Alumnos Completados</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Alumnos Completados</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{loading ? "..." : stats.studentsCompleted}</div>
@@ -256,56 +288,91 @@ export default function TeacherDashboard() {
             </div>
             
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-                <div className="xl:col-span-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Actividades Publicadas Recientemente</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                <TableRow>
-                                    <TableHead>Alumno</TableHead>
-                                    <TableHead>Actividad</TableHead>
-                                    <TableHead className="text-right">Categoría</TableHead>
-                                </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                {loading ? (
-                                    <TableRow><TableCell colSpan={3} className="text-center">Cargando...</TableCell></TableRow>
-                                ) : error ? (
-                                    <TableRow><TableCell colSpan={3} className="text-center text-destructive">{error}</TableCell></TableRow>
-                                ) : activities.length > 0 ? (
-                                    activities.map(activity => (
-                                    <TableRow key={activity.id}>
-                                        <TableCell>
-                                        <div className="font-medium">{activity.studentName}</div>
-                                        <div className="hidden text-sm text-muted-foreground md:inline">
-                                            {activity.startDate ? new Date(activity.startDate).toLocaleDateString() : ''}
-                                        </div>
-                                        </TableCell>
-                                        <TableCell>{activity.name}</TableCell>
-                                        <TableCell className="text-right capitalize">{activity.category}</TableCell>
-                                    </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow><TableCell colSpan={3} className="text-center">Por ahora, aquí no hay nada :(</TableCell></TableRow>
-                                )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </div>
-
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='text-base'>Horas dedicadas</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                        <TimeSummaryChart projects={activities} />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className='text-base'>Progreso Medio</CardTitle>
+                        <Select defaultValue={classes.length > 0 ? classes[0].id : 'all'}>
+                            <SelectTrigger className="w-[120px] h-8 text-xs">
+                                <SelectValue placeholder="Clase" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas</SelectItem>
+                                {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </CardHeader>
+                    <CardContent className="flex items-center justify-center">
+                        <div className="relative h-40 w-40">
+                             <ResponsiveContainer width="100%" height="100%">
+                                <RadialBarChart 
+                                    innerRadius="75%" 
+                                    outerRadius="100%" 
+                                    data={radialChartData} 
+                                    startAngle={90} 
+                                    endAngle={-270}
+                                >
+                                    <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                                    <RadialBar background dataKey="value" cornerRadius={10} />
+                                </RadialBarChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-3xl font-bold text-foreground">{averageProgress.toFixed(0)}%</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
                 <div className="hidden xl:block">
-                     <StudentsList userProfile={userProfile} students={students} loading={loading} />
+                     <StudentsList students={students} loading={loading} />
                 </div>
             </div>
-
-            <div className="block xl:hidden">
-                <StudentsList userProfile={userProfile} students={students} loading={loading} />
-            </div>
-
+            
+             <Card>
+                <CardHeader className='flex-row items-center justify-between'>
+                    <CardTitle>Actividades Publicadas Recientemente</CardTitle>
+                    <Button variant="ghost" size="icon"><Search className="h-5 w-5"/></Button>
+                </CardHeader>
+                <CardContent className='space-y-4'>
+                    {loading ? (
+                        <p className="text-center text-muted-foreground">Cargando actividades...</p>
+                    ) : activities.length > 0 ? (
+                        activities.slice(0, 5).map(activity => (
+                        <Card key={activity.id} className="p-3 shadow-none">
+                           <div className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 text-sm">
+                                <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-md">
+                                    <Paintbrush className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                </div>
+                                <p className="font-semibold text-primary">{activity.name}</p>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Clock className="h-4 w-4" />
+                                    <span>20:30h</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground capitalize">
+                                    <CasCategoryIcon category={activity.category} className="h-4 w-4" />
+                                    <span>{activity.category}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Avatar className="h-6 w-6">
+                                        <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${activity.studentName}`} />
+                                        <AvatarFallback>{activity.studentName.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <span>{activity.studentName.split(' ')[0]}</span>
+                                </div>
+                           </div>
+                        </Card>
+                        ))
+                    ) : (
+                        <p className="text-center text-muted-foreground py-8">No hay actividades publicadas recientemente.</p>
+                    )}
+                </CardContent>
+            </Card>
         </main>
       </div>
     </div>

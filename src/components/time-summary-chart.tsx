@@ -1,92 +1,80 @@
 'use client';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Project } from '@/lib/types';
 import { useMemo } from 'react';
-import { BarChart } from 'lucide-react';
-
-const COLORS = {
-  Creatividad: 'hsl(var(--chart-1))',
-  Actividad: 'hsl(var(--chart-2))',
-  Servicio: 'hsl(var(--chart-4))',
-};
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export function TimeSummaryChart({ projects }: { projects: Project[] }) {
 
   const data = useMemo(() => {
-    const summary = {
-      Creatividad: 0,
-      Actividad: 0,
-      Servicio: 0,
-    };
+    const monthlySummary: { [key: string]: number } = {};
 
     projects.forEach(project => {
-      const projectTime = project.timeEntries?.reduce((acc, entry) => {
-        if(entry.endTime){
-          const start = new Date(entry.startTime).getTime();
-          const end = new Date(entry.endTime).getTime();
-          return acc + (end - start);
+      project.timeEntries?.forEach(entry => {
+        if (entry.endTime) {
+          const entryDate = new Date(entry.startTime);
+          const month = entryDate.toLocaleString('es-ES', { month: 'short' });
+          const year = entryDate.getFullYear();
+          const key = `${month.charAt(0).toUpperCase() + month.slice(1)}`;
+
+          const durationMs = new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime();
+          const durationHours = durationMs / (1000 * 60 * 60);
+
+          if (!monthlySummary[key]) {
+            monthlySummary[key] = 0;
+          }
+          monthlySummary[key] += durationHours;
         }
-        return acc;
-      }, 0) || 0;
-      summary[project.category] += projectTime;
+      });
     });
 
-    return Object.entries(summary).map(([name, value]) => ({
-      name,
-      value: Math.round(value / (1000 * 60 * 60)) // convert ms to hours
-    })).filter(d => d.value > 0);
+    const monthOrder = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const sortedData = Object.entries(monthlySummary)
+      .map(([name, hours]) => ({ name, hours: Math.round(hours) }))
+      .sort((a, b) => monthOrder.indexOf(a.name) - monthOrder.indexOf(b.name));
+      
+    // Fill in missing months up to the current month
+    const currentMonthIndex = new Date().getMonth();
+    const result = [];
+    for(let i=0; i<=currentMonthIndex; i++){
+        const monthName = monthOrder[i];
+        const existingMonth = sortedData.find(d => d.name === monthName);
+        if(existingMonth) {
+            result.push(existingMonth);
+        } else {
+            result.push({name: monthName, hours: 0});
+        }
+    }
+    // For now, let's just use the last 5 months for display
+    return result.slice(-5);
+
 
   }, [projects]);
 
 
   if (data.length === 0) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline flex items-center gap-2"><BarChart/> Resumen de Tiempo</CardTitle>
-                <CardDescription>Visualiza el tiempo por categoría.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center justify-center h-48 text-muted-foreground">
-                    <p>No hay datos de tiempo para mostrar.</p>
-                </div>
-            </CardContent>
-        </Card>
+        <div className="flex items-center justify-center h-48 text-muted-foreground">
+            <p>No hay datos de tiempo para mostrar.</p>
+        </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline flex items-center gap-2"><BarChart/>Resumen de Tiempo</CardTitle>
-        <CardDescription>Horas dedicadas por categoría de CAS</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div style={{ width: '100%', height: 250 }}>
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-                nameKey="name"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => `${value} horas`}/>
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+    <div style={{ width: '100%', height: 200 }}>
+      <ResponsiveContainer>
+        <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+          <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+          <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value} Hr`} />
+          <Tooltip 
+            cursor={{fill: 'transparent'}}
+            contentStyle={{background: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)'}}
+            labelStyle={{fontWeight: 'bold'}}
+            formatter={(value: number) => [`${value} horas`, undefined]}
+          />
+          <Bar dataKey="hours" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

@@ -13,14 +13,26 @@ let adminDb: Firestore | null = null;
 let adminStorage: Storage | null = null;
 
 function getServiceAccount() {
+    const privateKey = process.env.AUTH_FIREBASE_PRIVATE_KEY;
+
+    if (!privateKey) {
+        throw new Error('Firebase private key not found in environment variables.');
+    }
+    
+    // The key might come with literal '\n' characters or as a single line with '\\n'.
+    // This handles both cases to ensure it's parsed correctly.
+    const formattedPrivateKey = privateKey.includes('\\n') 
+        ? privateKey.replace(/\\n/g, '\n')
+        : privateKey;
+
     const serviceAccount = {
         projectId: process.env.AUTH_FIREBASE_PROJECT_ID,
-        privateKey: process.env.AUTH_FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        privateKey: formattedPrivateKey,
         clientEmail: process.env.AUTH_FIREBASE_CLIENT_EMAIL,
     };
 
-    if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.clientEmail) {
-        throw new Error('Firebase admin credentials not found in environment variables.');
+    if (!serviceAccount.projectId || !serviceAccount.clientEmail) {
+        throw new Error('Firebase project ID or client email not found in environment variables.');
     }
 
     return serviceAccount;

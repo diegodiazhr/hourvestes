@@ -60,3 +60,4 @@ export async function getFirebaseAdmin() {
   
   return { adminAuth, adminDb, adminApp: app, adminStorage };
 }
+

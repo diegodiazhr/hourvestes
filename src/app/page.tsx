@@ -7,19 +7,9 @@ import StudentDashboard from '@/components/student-dashboard';
 import TeacherDashboard from '@/components/teacher-dashboard';
 import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 
-const publicRoutes = ['/login', '/register'];
-
 export default function Home() {
   const { user, userProfile, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [loading, user, router]);
   
-
   if (loading || !user) {
     return <DashboardSkeleton />;
   }

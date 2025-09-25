@@ -78,9 +78,9 @@ function LeftSidebarNav() {
     return (
         <div className="flex h-full max-h-screen flex-col">
             <div className="flex h-14 items-center px-6 lg:h-[60px]">
-                 <Link href="/" className="flex items-center gap-2 text-xl font-bold font-headline text-primary hover:text-primary/80 transition-colors">
-                    <svg fill="hsl(var(--primary))" height="24px" width="24px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M29.5,8.5L16,1.5L2.5,8.5l13.5,7L29.5,8.5z M2,11.3l13.5,6.9v10.3L2,21.6V11.3z M16.5,28.5v-10.3L30,11.3v10.3L16.5,28.5z"/></svg>
-                    <span className="text-sidebar-foreground">HourVest</span>
+                 <Link href="/" className="flex items-center gap-2 text-xl font-bold font-headline text-sidebar-foreground hover:opacity-80 transition-opacity">
+                    <svg fill="hsl(var(--sidebar-foreground))" height="24px" width="24px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M29.5,8.5L16,1.5L2.5,8.5l13.5,7L29.5,8.5z M2,11.3l13.5,6.9v10.3L2,21.6V11.3z M16.5,28.5v-10.3L30,11.3v10.3L16.5,28.5z"/></svg>
+                    <span className="font-bold">HourVest</span>
                 </Link>
             </div>
             <div className="flex-1 mt-4">
@@ -89,7 +89,7 @@ function LeftSidebarNav() {
                          <Link 
                             key={item.label}
                             href={item.href} 
-                            className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${item.href === '/' ? 'bg-primary text-primary-foreground' : 'text-primary-foreground/70 hover:bg-primary-foreground/10 hover:text-primary-foreground'}`}
+                            className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${item.href === '/' ? 'bg-primary text-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-primary/20 hover:text-sidebar-foreground'}`}
                         >
                             <item.icon className="h-4 w-4" />
                             {item.label}
@@ -145,7 +145,14 @@ export default function TeacherDashboard() {
             const fetchedClasses = await getClassesForTeacher(userProfile.id);
             setClasses(fetchedClasses);
 
-            const allStudentsFromClasses = fetchedClasses.flatMap(c => c.students.map(s => ({...s, className: c.name})));
+            if (fetchedClasses.length === 0) {
+              setStudents([]);
+              setActivities([]);
+              setLoadingData(false);
+              return;
+            }
+            
+            const allStudentsFromClasses = fetchedClasses.flatMap(c => c.students.map(s => ({...s, className: c.name, classId: c.id})));
             
             const projectsPromises = allStudentsFromClasses.map(student => getProjectsForStudent(student.id));
             const allProjectsPerStudent = await Promise.all(projectsPromises);

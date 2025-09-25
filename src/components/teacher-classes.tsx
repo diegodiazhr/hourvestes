@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useTransition } from 'react';
 import { useAuth } from '@/hooks/use-auth';
@@ -6,10 +7,10 @@ import { createClassAction } from '@/lib/actions';
 import type { Class, UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { Loader2, PlusCircle, Link as LinkIcon, User, Users, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, PlusCircle, Link as LinkIcon, User, Users, Calendar as CalendarIcon, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Accordion,
@@ -207,7 +208,7 @@ export function TeacherClasses() {
             <h1 className="text-2xl font-bold font-headline">Gestión de Clases y Alumnos</h1>
             <p className="text-muted-foreground">Crea clases, invita a alumnos y sigue su progreso.</p>
         </div>
-        <CreateClassForm onClassCreated={fetchClasses} />
+        {classes.length > 0 && <CreateClassForm onClassCreated={fetchClasses} />}
       </div>
 
       {classes.length > 0 ? (
@@ -251,14 +252,29 @@ export function TeacherClasses() {
             ))}
         </Accordion>
       ) : (
-        <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h2 className="text-xl font-semibold text-muted-foreground mt-4">¡Aún no has creado ninguna clase!</h2>
-            <p className="text-muted-foreground mt-2">Crea tu primera clase para poder invitar a alumnos.</p>
-            <div className="mt-4">
-                <CreateClassForm onClassCreated={fetchClasses} />
-            </div>
-        </div>
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-2xl">¡Bienvenido a HourVest!</CardTitle>
+            <CardDescription>Sigue estos dos sencillos pasos para empezar a gestionar a tus alumnos.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+              <div className="flex items-start gap-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">1</div>
+                  <div className="flex-1">
+                      <h3 className="text-lg font-semibold">Crea tu primera clase</h3>
+                      <p className="text-muted-foreground mb-4">Agrupa a tus alumnos en clases para tenerlos organizados. Por ejemplo: "Biología 1º Bachillerato".</p>
+                      <CreateClassForm onClassCreated={fetchClasses} />
+                  </div>
+              </div>
+              <div className="flex items-start gap-4 opacity-50">
+                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground font-bold">2</div>
+                   <div className="flex-1">
+                       <h3 className="text-lg font-semibold">Invita a tus alumnos</h3>
+                       <p className="text-muted-foreground">Una vez creada la clase, podrás copiar un enlace de invitación único para compartir con tus alumnos. ¡Ellos harán el resto!</p>
+                  </div>
+              </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

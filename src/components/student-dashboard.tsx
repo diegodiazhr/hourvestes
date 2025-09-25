@@ -13,6 +13,7 @@ import type { Project, UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatsCards } from '@/components/stats-cards';
+import { StudentOnboarding } from './student-onboarding';
 
 function DashboardSkeleton() {
   return (
@@ -66,6 +67,10 @@ export default function StudentDashboard() {
         </main>
       </div>
     )
+  }
+  
+  if (projects.length === 0) {
+      return <StudentOnboarding />;
   }
   
   const deadline = new Date();
@@ -128,29 +133,17 @@ export default function StudentDashboard() {
           </Button>
         </div>
 
-        {projects.length > 0 ? (
-          <div className="grid gap-8 lg:grid-cols-3">
-              <div className="lg:col-span-2 grid gap-6 grid-cols-1 sm:grid-cols-2">
-                {projects.map(project => (
-                  <ProjectCard key={project.id} project={project} />
-                ))}
-              </div>
-              <div className="hidden lg:block lg:col-span-1">
-                <TimeSummaryChart projects={projects} />
-              </div>
-          </div>
-        ) : (
-          <div className="text-center py-12 md:py-16 border-2 border-dashed rounded-lg">
-            <Trophy className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h2 className="text-xl font-semibold text-muted-foreground mt-4">¡Aún no hay proyectos!</h2>
-            <p className="text-muted-foreground mt-2">Comienza tu viaje CAS creando tu primer proyecto.</p>
-            <Button asChild className="mt-4">
-              <Link href="/projects/new">
-                <PlusCircle className="mr-2 h-4 w-4" /> Crear Primer Proyecto
-              </Link>
-            </Button>
-          </div>
-        )}
+        
+        <div className="grid gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-2 grid gap-6 grid-cols-1 sm:grid-cols-2">
+            {projects.map(project => (
+                <ProjectCard key={project.id} project={project} />
+            ))}
+            </div>
+            <div className="hidden lg:block lg:col-span-1">
+            <TimeSummaryChart projects={projects} />
+            </div>
+        </div>
       </main>
     </div>
   );

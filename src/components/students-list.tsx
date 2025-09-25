@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import type { UserProfile } from '@/lib/types';
@@ -65,3 +66,5 @@ export default function StudentsList({ students, loading }: StudentsListProps) {
         </Card>
     );
 }
+
+    

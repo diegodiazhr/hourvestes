@@ -1,3 +1,4 @@
+
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -143,7 +144,9 @@ export default function TeacherDashboard() {
             const fetchedClasses = await getClassesForTeacher(userProfile.id);
             setClasses(fetchedClasses);
 
-            const allStudentsFromClasses = fetchedClasses.flatMap(c => c.students.map(s => ({...s, className: c.name, classId: c.id})));
+            const allStudentsFromClasses = fetchedClasses.flatMap(c => 
+                c.students.map(s => ({...s, className: c.name, classId: c.id}))
+            );
             
             if (allStudentsFromClasses.length === 0) {
               setStudents([]);
@@ -419,3 +422,5 @@ export default function TeacherDashboard() {
     </div>
   );
 }
+
+    

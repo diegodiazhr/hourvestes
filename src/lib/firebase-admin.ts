@@ -13,21 +13,20 @@ let adminDb: Firestore | null = null;
 let adminStorage: Storage | null = null;
 
 function getServiceAccount() {
-    const privateKey = process.env.AUTH_FIREBASE_PRIVATE_KEY;
+    const privateKeyRaw = process.env.AUTH_FIREBASE_PRIVATE_KEY;
 
-    if (!privateKey) {
+    if (!privateKeyRaw) {
         throw new Error('Firebase private key not found in environment variables.');
     }
     
-    // The key might come with literal '\n' characters or as a single line with '\\n'.
-    // This handles both cases to ensure it's parsed correctly.
-    const formattedPrivateKey = privateKey.includes('\\n') 
-        ? privateKey.replace(/\\n/g, '\n')
-        : privateKey;
+    // This is the robust way to handle the private key, which can be formatted differently
+    // in local .env files vs. production environment variables.
+    // It ensures the final key has the correct newlines for parsing.
+    const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
 
     const serviceAccount = {
         projectId: process.env.AUTH_FIREBASE_PROJECT_ID,
-        privateKey: formattedPrivateKey,
+        privateKey,
         clientEmail: process.env.AUTH_FIREBASE_CLIENT_EMAIL,
     };
 
@@ -39,7 +38,7 @@ function getServiceAccount() {
 }
 
 function getStorageBucket() {
-    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${getServiceAccount().projectId}.appspot.com`;
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${process.env.AUTH_FIREBASE_PROJECT_ID}.appspot.com`;
     if (!bucketName) {
         throw new Error('Firebase Storage bucket name could not be determined.');
     }

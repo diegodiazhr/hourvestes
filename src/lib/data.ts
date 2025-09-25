@@ -1,4 +1,5 @@
 
+
 import { collection, getDocs, doc, getDoc, orderBy, query, where, onSnapshot, DocumentData } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Project, ProjectDocument, UserProfile, Class, ClassDocument, School, SchoolDocument } from './types';
@@ -13,19 +14,21 @@ function docToProject(data: DocumentData, id: string): Project {
     };
 }
 
-function docToClass(doc: ClassDocument, id: string): Omit<Class, 'students' | 'studentCount'> {
+function docToClass(doc: DocumentData, id: string): Omit<Class, 'students' | 'studentCount'> {
+    const classDoc = doc as ClassDocument;
     return {
         id,
-        ...doc,
-        casEndDate: doc.casEndDate.toDate(),
+        ...classDoc,
+        casEndDate: classDoc.casEndDate.toDate(),
     }
 }
 
-function docToSchool(doc: SchoolDocument, id: string): School {
+function docToSchool(doc: DocumentData, id: string): School {
+    const schoolDoc = doc as SchoolDocument;
     return {
         id,
-        ...doc,
-        casEndDate: doc.casEndDate ? doc.casEndDate.toDate() : undefined,
+        ...schoolDoc,
+        casEndDate: schoolDoc.casEndDate ? schoolDoc.casEndDate.toDate() : undefined,
     };
 }
 
@@ -50,7 +53,7 @@ export async function getProject(id: string): Promise<Project | null> {
     const projectDocRef = doc(db, 'projects', id);
     const projectDoc = await getDoc(projectDocRef);
     if (projectDoc.exists()) {
-        const data = projectDoc.data() as ProjectDocument;
+        const data = projectDoc.data();
         return docToProject(data, projectDoc.id);
     }
     return null;
@@ -89,11 +92,11 @@ export function onStudentsUpdate(teacherId: string, callback: (students: UserPro
   
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const studentList = snapshot.docs
-      .filter(doc => doc.exists()) // Ensure document exists
-      .map(doc => {
-        const data = doc.data();
+      .filter(docSnap => docSnap.exists())
+      .map(docSnap => {
+        const data = docSnap.data();
         return {
-          id: doc.id,
+          id: docSnap.id,
           email: data.email,
           name: data.name,
           role: data.role,
@@ -120,9 +123,9 @@ export async function getProjectsForStudent(studentId: string): Promise<Project[
     const q = query(projectsCol, where('userId', '==', studentId), orderBy('startDate', 'desc'));
     const projectSnapshot = await getDocs(q);
     const projectList = projectSnapshot.docs
-        .filter(doc => doc.exists()) // Ensure document exists before processing
-        .map(doc => {
-            return docToProject(doc.data(), doc.id);
+        .filter(docSnap => docSnap.exists()) 
+        .map(docSnap => {
+            return docToProject(docSnap.data(), docSnap.id);
         });
     return projectList;
 }
@@ -133,7 +136,7 @@ export async function getClassesForTeacher(teacherId: string): Promise<Class[]> 
     // Get all classes for the teacher
     const classesQuery = query(collection(db, 'classes'), where('teacherId', '==', teacherId), orderBy('name'));
     const classesSnapshot = await getDocs(classesQuery);
-    const classList = classesSnapshot.docs.map(docSnap => docToClass(docSnap.data() as ClassDocument, docSnap.id));
+    const classList = classesSnapshot.docs.map(docSnap => docToClass(docSnap.data(), docSnap.id));
 
     if (classList.length === 0) return [];
 
@@ -155,12 +158,23 @@ export async function getClassesForTeacher(teacherId: string): Promise<Class[]> 
     return classesWithStudents;
 }
 
+export async function getClass(classId: string): Promise<Omit<Class, 'students' | 'studentCount'> | null> {
+    if (!db) return null;
+    const classDocRef = doc(db, 'classes', classId);
+    const classDoc = await getDoc(classDocRef);
+    if (classDoc.exists()) {
+        return docToClass(classDoc.data(), classDoc.id);
+    }
+    return null;
+}
+
+
 export async function getSchoolSettings(schoolId: string): Promise<School | null> {
     if (!db) return null;
     const schoolDocRef = doc(db, 'schools', schoolId);
     const schoolDoc = await getDoc(schoolDocRef);
     if (schoolDoc.exists()) {
-      return docToSchool(schoolDoc.data() as SchoolDocument, schoolDoc.id);
+      return docToSchool(schoolDoc.data(), schoolDoc.id);
     }
     return null;
 }

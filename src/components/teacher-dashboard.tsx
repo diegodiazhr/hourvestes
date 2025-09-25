@@ -78,7 +78,7 @@ function LeftSidebarNav() {
     return (
         <div className="flex h-full max-h-screen flex-col">
             <div className="flex h-14 items-center px-6 lg:h-[60px]">
-                 <Link href="/" className="flex items-center gap-2 text-xl font-bold font-headline text-sidebar-foreground hover:opacity-80 transition-opacity">
+                 <Link href="/" className="flex items-center gap-2 text-xl font-headline text-sidebar-foreground hover:opacity-80 transition-opacity">
                     <svg fill="hsl(var(--sidebar-foreground))" height="24px" width="24px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M29.5,8.5L16,1.5L2.5,8.5l13.5,7L29.5,8.5z M2,11.3l13.5,6.9v10.3L2,21.6V11.3z M16.5,28.5v-10.3L30,11.3v10.3L16.5,28.5z"/></svg>
                     <span className="font-bold">HourVest</span>
                 </Link>
@@ -132,7 +132,6 @@ export default function TeacherDashboard() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -140,18 +139,10 @@ export default function TeacherDashboard() {
     if (userProfile && userProfile.role === 'Profesor') {
       const fetchInitialData = async () => {
         setLoadingData(true);
-        setError(null);
         try {
             const fetchedClasses = await getClassesForTeacher(userProfile.id);
             setClasses(fetchedClasses);
 
-            if (fetchedClasses.length === 0) {
-              setStudents([]);
-              setActivities([]);
-              setLoadingData(false);
-              return;
-            }
-            
             const allStudentsFromClasses = fetchedClasses.flatMap(c => c.students.map(s => ({...s, className: c.name, classId: c.id})));
             
             if (allStudentsFromClasses.length === 0) {
@@ -161,9 +152,8 @@ export default function TeacherDashboard() {
               return;
             }
 
-            const allProjectsPerStudent = await Promise.all(
-                allStudentsFromClasses.map(student => getProjectsForStudent(student.id))
-            );
+            const projectsPromises = allStudentsFromClasses.map(student => getProjectsForStudent(student.id));
+            const allProjectsPerStudent = await Promise.all(projectsPromises);
             
             const allActivities: ActivityItem[] = [];
             const studentsWithHours = allStudentsFromClasses.map((student, index) => {
@@ -192,8 +182,6 @@ export default function TeacherDashboard() {
             setActivities(allActivities.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())); 
 
         } catch (e: any) {
-            setError('Error al cargar los datos del panel.');
-            console.error(e);
              toast({
                 variant: 'destructive',
                 title: 'Error de carga',

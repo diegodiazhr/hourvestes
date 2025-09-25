@@ -278,14 +278,16 @@ export function TimeTracker({ project }: { project: Project }) {
             {sortedEntries.length > 0 ? (
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                     {sortedEntries.map(entry => {
-                         const durationMs = new Date(entry.endTime!).getTime() - new Date(entry.startTime).getTime();
-                         const durationStr = formatDistanceToNowStrict(new Date().getTime() - durationMs, { locale: es, unit: 'hour' });
+                         const durationMs = entry.endTime ? new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime() : 0;
+                         if (durationMs <= 0 && !entry.manual) {
+                            if (entry.endTime === null) return null; // Don't render active timer here
+                         }
                         
                         return (
                             <div key={entry.startTime} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted/50">
                                 <div>
                                     <p className="font-medium">{format(new Date(entry.startTime), "d MMM, yyyy", { locale: es })}</p>
-                                    <p className="text-xs text-muted-foreground">{entry.manual ? 'Entrada manual' : `De ${format(new Date(entry.startTime), 'HH:mm')} a ${format(new Date(entry.endTime!), 'HH:mm')}`}</p>
+                                    <p className="text-xs text-muted-foreground">{entry.manual ? 'Entrada manual' : `De ${format(new Date(entry.startTime), 'HH:mm')} a ${entry.endTime ? format(new Date(entry.endTime), 'HH:mm') : '...'}`}</p>
                                 </div>
                                 <div className="font-mono text-right">
                                     {formatDuration(durationMs)}

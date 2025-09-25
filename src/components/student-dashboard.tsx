@@ -5,11 +5,11 @@ import { PlusCircle, School, BookUser, CalendarClock, Trophy } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 import { ProjectCard } from '@/components/project-card';
-import { getProjects } from '@/lib/data';
+import { getProjects, getUserProfile } from '@/lib/data';
 import { TimeSummaryChart } from '@/components/time-summary-chart';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState } from 'react';
-import type { Project } from '@/lib/types';
+import type { Project, UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatsCards } from '@/components/stats-cards';
@@ -39,6 +39,7 @@ function DashboardSkeleton() {
 export default function StudentDashboard() {
   const { user, userProfile, loading } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [teacher, setTeacher] = useState<UserProfile | null>(null);
   const [projectsLoading, setProjectsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,6 +50,12 @@ export default function StudentDashboard() {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+      if (userProfile?.teacherId) {
+        getUserProfile(userProfile.teacherId).then(setTeacher);
+      }
+  }, [userProfile]);
 
   if (loading || projectsLoading) {
     return (
@@ -61,7 +68,6 @@ export default function StudentDashboard() {
     )
   }
   
-  const teacher = { name: "Prof. Anacleta", email: "anacleta@school.org" };
   const deadline = new Date();
   deadline.setMonth(deadline.getMonth() + 6);
 
@@ -94,8 +100,8 @@ export default function StudentDashboard() {
                     <BookUser className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-lg font-semibold">{teacher.name}</div>
-                <p className="text-xs text-muted-foreground">{teacher.email}</p>
+                <div className="text-lg font-semibold">{teacher?.name || 'No asignado'}</div>
+                {teacher?.email && <p className="text-xs text-muted-foreground">{teacher.email}</p>}
                 </CardContent>
             </Card>
             <Card>

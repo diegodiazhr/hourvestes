@@ -148,39 +148,41 @@ export default function TeacherDashboard() {
                 c.students.map(s => ({...s, className: c.name, classId: c.id}))
             );
             
-            if (allStudentsFromClasses.length > 0) {
-                const projectsPromises = allStudentsFromClasses.map(student => getProjectsForStudent(student.id));
-                const allProjectsPerStudent = await Promise.all(projectsPromises);
+            if (allStudentsFromClasses.length === 0) {
+              setStudents([]);
+              setActivities([]);
+              setLoadingData(false);
+              return;
+            }
+
+            const projectsPromises = allStudentsFromClasses.map(student => getProjectsForStudent(student.id));
+            const allProjectsPerStudent = await Promise.all(projectsPromises);
+            
+            const allActivities: ActivityItem[] = [];
+            const studentsWithHours = allStudentsFromClasses.map((student, index) => {
+                const studentProjects = allProjectsPerStudent[index];
                 
-                const allActivities: ActivityItem[] = [];
-                const studentsWithHours = allStudentsFromClasses.map((student, index) => {
-                    const studentProjects = allProjectsPerStudent[index];
-                    
-                    studentProjects.forEach(p => {
-                        allActivities.push({ ...p, studentName: student.name });
-                    });
-
-                    const totalMilliseconds = studentProjects.reduce((acc, project) => {
-                      const projectTime =
-                        project.timeEntries?.reduce((timeAcc, entry) => {
-                          if (entry.endTime) {
-                            return timeAcc + (new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime());
-                          }
-                          return timeAcc;
-                        }, 0) || 0;
-                      return acc + projectTime;
-                    }, 0);
-                    const totalHours = totalMilliseconds / (1000 * 60 * 60);
-
-                    return { ...student, totalHours };
+                studentProjects.forEach(p => {
+                    allActivities.push({ ...p, studentName: student.name });
                 });
 
-                setStudents(studentsWithHours);
-                setActivities(allActivities.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
-            } else {
-                setStudents([]);
-                setActivities([]);
-            }
+                const totalMilliseconds = studentProjects.reduce((acc, project) => {
+                  const projectTime =
+                    project.timeEntries?.reduce((timeAcc, entry) => {
+                      if (entry.endTime) {
+                        return timeAcc + (new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime());
+                      }
+                      return timeAcc;
+                    }, 0) || 0;
+                  return acc + projectTime;
+                }, 0);
+                const totalHours = totalMilliseconds / (1000 * 60 * 60);
+
+                return { ...student, totalHours };
+            });
+
+            setStudents(studentsWithHours);
+            setActivities(allActivities.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
 
         } catch (e: any) {
              toast({
@@ -420,7 +422,5 @@ export default function TeacherDashboard() {
     </div>
   );
 }
-
-    
 
     

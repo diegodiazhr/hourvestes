@@ -14,40 +14,34 @@ const firebaseConfig = {
 };
 
 // Singleton pattern to initialize Firebase on the client side
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let db: Firestore | undefined;
 
-function getFirebaseClient() {
-    if (!getApps().length) {
-        if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+
+function initializeFirebaseClient() {
+    if (getApps().length === 0) {
+        // Ensure all required config values are present
+        if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            } catch(e) {
+                console.error("Error initializing Firebase:", e);
+            }
+        } else {
             console.error("Firebase config is missing or incomplete. Please check your environment variables.");
-            // Return null or throw an error, depending on how you want to handle it.
-            // For a client-side app, you might want to show an error message to the user.
-            throw new Error("Firebase configuration is missing.");
         }
-        app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
     } else {
         app = getApp();
         auth = getAuth(app);
         db = getFirestore(app);
     }
-    return { app, auth, db };
 }
 
-// Initialize on first call
-try {
-    const client = getFirebaseClient();
-    app = client.app;
-    auth = client.auth;
-    db = client.db;
-} catch (e) {
-    // This will catch the missing config error on server-side rendering if not careful,
-    // but the main usage will be client-side where config should be available.
-    console.warn((e as Error).message);
-}
+// Call the function to initialize Firebase
+initializeFirebaseClient();
 
 
 // Export instances. They might be undefined if initialization fails.

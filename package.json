@@ -51,6 +51,8 @@
     "firebase-storage": "^1.0.1",
     "genkit": "^1.14.1",
     "jose": "^5.6.3",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
     "lucide-react": "^0.475.0",
     "mime-types": "^2.1.35",
     "next": "15.3.3",
@@ -64,6 +66,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/jspdf": "^2.0.0",
     "@types/mime-types": "^2.1.4",
     "@types/node": "^20",
     "@types/react": "^18",

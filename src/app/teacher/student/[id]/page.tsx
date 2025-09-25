@@ -1,19 +1,21 @@
 
 'use client';
 
-import { getClass, getProject, getProjectsForStudent, getUserProfile } from '@/lib/data';
+import { getClass, getProject, getProjectsForStudent, getSchoolSettings, getUserProfile } from '@/lib/data';
 import { notFound, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import type { Project, UserProfile, Class } from '@/lib/types';
+import type { Project, UserProfile, Class, School } from '@/lib/types';
 import { Header } from '@/components/header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mail, Users, FileDown, ArrowRight } from 'lucide-react';
+import { Mail, Users, FileDown, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { CasCategoryIcon } from '@/components/cas-category-icon';
 import { Button } from '@/components/ui/button';
+import { generateStudentReport } from '@/lib/pdf-generator';
+import { useToast } from '@/hooks/use-toast';
 
 function StudentDetailSkeleton() {
     return (
@@ -38,10 +40,13 @@ function StudentDetailSkeleton() {
 export default function StudentDetailPage() {
   const params = useParams();
   const studentId = params.id as string;
+  const { toast } = useToast();
   const [student, setStudent] = useState<UserProfile | null>(null);
   const [studentClass, setStudentClass] = useState<Omit<Class, 'students' | 'studentCount'> | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [school, setSchool] = useState<School | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   useEffect(() => {
     if (studentId) {
@@ -55,14 +60,16 @@ export default function StudentDetailPage() {
               return;
             }
     
-            const [studentProjects, classData] = await Promise.all([
+            const [studentProjects, classData, schoolData] = await Promise.all([
                 getProjectsForStudent(studentId),
-                studentProfile.classId ? getClass(studentProfile.classId) : Promise.resolve(null)
+                studentProfile.classId ? getClass(studentProfile.classId) : Promise.resolve(null),
+                studentProfile.school ? getSchoolSettings(studentProfile.school) : Promise.resolve(null)
             ]);
     
             setStudent(studentProfile);
             setProjects(studentProjects);
             setStudentClass(classData);
+            setSchool(schoolData);
 
         } catch (error) {
             console.error("Failed to fetch student data:", error);
@@ -74,6 +81,22 @@ export default function StudentDetailPage() {
       fetchData();
     }
   }, [studentId]);
+
+  const handleExportPdf = async () => {
+    if (!student || !projects || !school) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pueden generar el informe porque faltan datos.' });
+        return;
+    };
+    setIsGeneratingPdf(true);
+    try {
+        await generateStudentReport(student, projects, school);
+    } catch (error) {
+        console.error("PDF Generation failed", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo generar el informe en PDF.' });
+    } finally {
+        setIsGeneratingPdf(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -133,9 +156,9 @@ export default function StudentDetailPage() {
         <div className="mt-8">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold font-headline">Proyectos del Alumno</h2>
-                <Button variant="outline" disabled>
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Exportar Información (PDF)
+                <Button variant="outline" onClick={handleExportPdf} disabled={isGeneratingPdf}>
+                    {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                    {isGeneratingPdf ? 'Generando PDF...' : 'Exportar Información (PDF)'}
                 </Button>
             </div>
             {projects.length > 0 ? (

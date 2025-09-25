@@ -7,11 +7,12 @@ import {
   Building,
   LogOut,
   Search,
-  FolderKanban,
+  Clock,
   Menu,
   Bell,
-  Clock,
   Target,
+  FolderKanban,
+  FileClock,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { getProjectsForStudent, getClassesForTeacher } from '@/lib/data';
@@ -45,6 +46,7 @@ import {
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { CasCategoryIcon } from './cas-category-icon';
 import { Skeleton } from './ui/skeleton';
+import { Separator } from './ui/separator';
 
 type ActivityItem = Project & { studentName: string };
 
@@ -69,37 +71,38 @@ function formatProjectDuration(project: Project) {
 
 function LeftSidebarNav() {
     const router = useRouter();
-    const handleSignOut = async () => {
-        await auth.signOut();
-        router.push('/login');
-    };
+
+    const navItems = [
+        { href: '/', icon: Home, label: 'Inicio' },
+        { href: '#', icon: FolderKanban, label: 'Proyectos' },
+        { href: '/teacher/students', icon: Users, label: 'Alumnos' },
+        { href: '/teacher/school', icon: Building, label: 'Colegio' },
+    ];
 
     return (
         <div className="flex h-full max-h-screen flex-col">
-            <div className="flex h-14 items-center px-4 lg:h-[60px] lg:px-6">
+            <div className="flex h-14 items-center px-6 lg:h-[60px]">
                 <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary">
-                     <div className="bg-primary text-primary-foreground rounded-lg p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    <div className="bg-primary text-primary-foreground rounded-lg p-2 flex items-center justify-center">
+                       <svg fill="#ffffff" height="20px" width="20px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M29.5,8.5L16,1.5L2.5,8.5l13.5,7L29.5,8.5z M2,11.3l13.5,6.9v10.3L2,21.6V11.3z M16.5,28.5v-10.3L30,11.3v10.3L16.5,28.5z"/></svg>
                     </div>
                     <span className="hidden md:inline">HOURVEST</span>
                 </Link>
             </div>
             <div className="flex-1 mt-4">
                 <nav className="grid items-start px-4 text-sm font-medium">
-                    <Link href="/" className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all">
-                        <Home className="h-4 w-4" />
-                        Inicio
-                    </Link>
-                    <Link href="/teacher/students" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-                        <Users className="h-4 w-4" />
-                        Alumnos
-                    </Link>
-                    <Link href="/teacher/school" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-                        <Building className="h-4 w-4" />
-                        Colegio
-                    </Link>
-                     <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground/50 transition-all cursor-not-allowed">
-                        <Clock className="h-4 w-4" />
+                    {navItems.map(item => (
+                         <Link 
+                            key={item.label}
+                            href={item.href} 
+                            className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${item.href === '/' ? 'bg-primary text-primary-foreground' : 'text-primary-foreground/70 hover:bg-primary-foreground/10 hover:text-primary-foreground'}`}
+                        >
+                            <item.icon className="h-4 w-4" />
+                            {item.label}
+                        </Link>
+                    ))}
+                    <Link href="#" className="mt-4 flex items-center gap-3 rounded-lg px-3 py-2 text-primary-foreground/50 transition-all cursor-not-allowed">
+                        <FileClock className="h-4 w-4" />
                         Pronto más opciones...
                     </Link>
                 </nav>
@@ -120,10 +123,12 @@ function DashboardSkeleton() {
               <Skeleton className="h-28" />
             </div>
              <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-                <Skeleton className="xl:col-span-2 h-64" />
-                <Skeleton className="h-64" />
-                <div className="hidden xl:block">
-                    <Skeleton className="h-64" />
+                <div className="xl:col-span-2">
+                  <Skeleton className="h-64" />
+                </div>
+                <div className="grid gap-4">
+                  <Skeleton className="h-40" />
+                  <Skeleton className="h-40" />
                 </div>
             </div>
             <Skeleton className="h-80" />
@@ -230,10 +235,10 @@ export default function TeacherDashboard() {
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-card md:block">
+      <div className="hidden border-r bg-sidebar md:block">
         <LeftSidebarNav />
       </div>
-      <div className="flex flex-col bg-muted/40">
+      <div className="flex flex-col bg-muted/20">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
           <Sheet>
             <SheetTrigger asChild>
@@ -242,13 +247,12 @@ export default function TeacherDashboard() {
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col p-0 bg-card">
+            <SheetContent side="left" className="flex flex-col p-0 bg-sidebar">
               <LeftSidebarNav />
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
-            <form>
-              <div className="relative">
+             <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
@@ -256,7 +260,6 @@ export default function TeacherDashboard() {
                   className="w-full appearance-none bg-muted pl-8 shadow-none md:w-2/3 lg:w-1/3"
                 />
               </div>
-            </form>
           </div>
           <Button variant="ghost" size="icon" className="rounded-full">
             <Bell className="h-5 w-5"/>
@@ -291,8 +294,9 @@ export default function TeacherDashboard() {
 
         {loading ? <DashboardSkeleton /> : (
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-                <div className="flex items-center">
-                    <h1 className="text-2xl font-semibold">Hola {userProfile?.name.split(' ')[0]} 👋</h1>
+                <div>
+                    <h1 className="text-2xl font-bold">Hola {userProfile?.name.split(' ')[0]} 👋</h1>
+                    <p className="text-muted-foreground">Inicio</p>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
@@ -301,7 +305,7 @@ export default function TeacherDashboard() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">Total de Alumnos</CardTitle>
                     </CardHeader>
                     <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalStudents}</div>
+                    <div className="text-3xl font-bold">{stats.totalStudents}</div>
                     <p className="text-xs text-muted-foreground">Alumnos vinculados a tu Institución Educativa</p>
                     </CardContent>
                 </Card>
@@ -310,7 +314,7 @@ export default function TeacherDashboard() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">Clases Gestionadas</CardTitle>
                     </CardHeader>
                     <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalClasses}</div>
+                    <div className="text-3xl font-bold">{stats.totalClasses}</div>
                     <p className="text-xs text-muted-foreground">Cantidad de clases creadas</p>
                     </CardContent>
                 </Card>
@@ -319,7 +323,7 @@ export default function TeacherDashboard() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">Alumnos Completados</CardTitle>
                     </CardHeader>
                     <CardContent>
-                    <div className="text-2xl font-bold">{stats.studentsCompleted}</div>
+                    <div className="text-3xl font-bold">{stats.studentsCompleted}</div>
                     <p className="text-xs text-muted-foreground">han alcanzado la meta de horas</p>
                     </CardContent>
                 </Card>
@@ -328,57 +332,56 @@ export default function TeacherDashboard() {
                 <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
                     <Card className="xl:col-span-2">
                         <CardHeader>
-                            <CardTitle className='text-base'>Horas dedicadas (Últimos 6 meses)</CardTitle>
+                            <CardTitle className='text-base'>Horas dedicadas</CardTitle>
                         </CardHeader>
                         <CardContent className="pl-2">
                             <TimeSummaryChart projects={activities} />
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className='text-base'>Progreso Medio</CardTitle>
-                            <Select defaultValue={classes.length > 0 ? 'all' : undefined}>
-                                <SelectTrigger className="w-[120px] h-8 text-xs">
-                                    <SelectValue placeholder="Clase" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Todas</SelectItem>
-                                    {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </CardHeader>
-                        <CardContent className="flex items-center justify-center">
-                            <div className="relative h-40 w-40">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RadialBarChart 
-                                        innerRadius="75%" 
-                                        outerRadius="100%" 
-                                        data={radialChartData} 
-                                        startAngle={90} 
-                                        endAngle={450} // 360 + 90
-                                    >
-                                        <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                                        <RadialBar background dataKey="value" cornerRadius={10} />
-                                    </RadialBarChart>
-                                </ResponsiveContainer>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                    <Target className="h-6 w-6 text-muted-foreground mb-1"/>
-                                    <span className="text-3xl font-bold text-foreground">{averageProgress.toFixed(0)}%</span>
+                    <div className="grid gap-4">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle className='text-base'>Progreso Medio</CardTitle>
+                                <Select defaultValue={classes.length > 0 ? 'all' : undefined}>
+                                    <SelectTrigger className="w-[120px] h-8 text-xs">
+                                        <SelectValue placeholder="Clase" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todas</SelectItem>
+                                        {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </CardHeader>
+                            <CardContent className="flex items-center justify-center -mt-4">
+                                <div className="relative h-40 w-40">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RadialBarChart 
+                                            innerRadius="75%" 
+                                            outerRadius="100%" 
+                                            data={radialChartData} 
+                                            startAngle={90} 
+                                            endAngle={450}
+                                        >
+                                            <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                                            <RadialBar background={{fill: 'hsl(var(--muted))'}} dataKey="value" cornerRadius={10} />
+                                        </RadialBarChart>
+                                    </ResponsiveContainer>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                        <span className="text-3xl font-bold text-foreground">{averageProgress.toFixed(0)}%</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <div className="hidden xl:block">
+                            </CardContent>
+                        </Card>
                         <StudentsList students={students} loading={loading} />
                     </div>
                 </div>
                 
                 <Card>
                     <CardHeader className='flex-row items-center justify-between'>
-                        <CardTitle>Actividades Añadidas Recientemente</CardTitle>
-                        <Button variant="ghost" asChild><Link href="#">Ver todo</Link></Button>
+                        <CardTitle>Actividades Publicadas Recientemente</CardTitle>
+                        <Button variant="ghost" size="icon"><Search className="h-5 w-5 text-muted-foreground" /></Button>
                     </CardHeader>
-                    <CardContent className='space-y-4'>
+                    <CardContent className='space-y-2'>
                         {loading ? (
                             <p className="text-center text-muted-foreground">Cargando actividades...</p>
                         ) : activities.length > 0 ? (

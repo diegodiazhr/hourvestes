@@ -154,8 +154,16 @@ export default function TeacherDashboard() {
             
             const allStudentsFromClasses = fetchedClasses.flatMap(c => c.students.map(s => ({...s, className: c.name, classId: c.id})));
             
-            const projectsPromises = allStudentsFromClasses.map(student => getProjectsForStudent(student.id));
-            const allProjectsPerStudent = await Promise.all(projectsPromises);
+            if (allStudentsFromClasses.length === 0) {
+              setStudents([]);
+              setActivities([]);
+              setLoadingData(false);
+              return;
+            }
+
+            const allProjectsPerStudent = await Promise.all(
+                allStudentsFromClasses.map(student => getProjectsForStudent(student.id))
+            );
             
             const allActivities: ActivityItem[] = [];
             const studentsWithHours = allStudentsFromClasses.map((student, index) => {

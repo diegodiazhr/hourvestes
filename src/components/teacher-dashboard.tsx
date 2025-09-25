@@ -35,31 +35,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import StudentsList from './students-list';
 
-function InviteButton({
-  teacherId,
-  schoolName,
-}: {
-  teacherId: string;
-  schoolName?: string;
-}) {
-  const { toast } = useToast();
-
-  const handleInvite = () => {
-    toast({
-        title: 'Ve a la sección "Alumnos"',
-        description:
-          'Para invitar alumnos, crea una clase y copia el enlace de invitación desde la sección "Alumnos".',
-      });
-  };
-
-  return (
-    <Button onClick={handleInvite} className="w-full">
-      <Copy className="mr-2 h-4 w-4" />
-      Invitar Alumnos
-    </Button>
-  );
-}
-
 type Activity = Project & { studentName: string };
 
 function LeftSidebarNav() {
@@ -245,11 +220,6 @@ export default function TeacherDashboard() {
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-lg font-semibold md:text-2xl">Inicio</h1>
-                {userProfile && (
-                    <div className="md:hidden">
-                         <InviteButton teacherId={userProfile.id} schoolName={userProfile.school} />
-                    </div>
-                )}
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
@@ -329,11 +299,6 @@ export default function TeacherDashboard() {
 
                 <div className="hidden xl:block">
                      <StudentsList userProfile={userProfile} students={students} loading={loading} />
-                     {userProfile && (
-                        <div className="mt-4">
-                           <InviteButton teacherId={userProfile.id} schoolName={userProfile.school} />
-                        </div>
-                    )}
                 </div>
             </div>
 

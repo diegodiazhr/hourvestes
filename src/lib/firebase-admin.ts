@@ -13,7 +13,20 @@ function getServiceAccount() {
         throw new Error('Firebase private key not found in environment variables.');
     }
     
-    const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
+    let privateKey;
+    // Vercel escapes the private key, so we need to un-escape it.
+    // This should also work locally if the key is not escaped.
+    if (privateKeyRaw.startsWith('"') && privateKeyRaw.endsWith('"')) {
+        try {
+            privateKey = JSON.parse(privateKeyRaw);
+        } catch (e) {
+            // If JSON.parse fails, it might not be a JSON string. Fallback.
+            privateKey = privateKeyRaw.replace(/\\n/g, '\n');
+        }
+    } else {
+        privateKey = privateKeyRaw.replace(/\\n/g, '\n');
+    }
+
 
     const serviceAccount = {
         projectId: process.env.AUTH_FIREBASE_PROJECT_ID,

@@ -46,7 +46,6 @@ import {
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { CasCategoryIcon } from './cas-category-icon';
 import { Skeleton } from './ui/skeleton';
-import { Separator } from './ui/separator';
 
 type ActivityItem = Project & { studentName: string };
 
@@ -74,7 +73,6 @@ function LeftSidebarNav() {
 
     const navItems = [
         { href: '/', icon: Home, label: 'Inicio' },
-        { href: '#', icon: FolderKanban, label: 'Proyectos' },
         { href: '/teacher/students', icon: Users, label: 'Alumnos' },
         { href: '/teacher/school', icon: Building, label: 'Colegio' },
     ];
@@ -83,10 +81,8 @@ function LeftSidebarNav() {
         <div className="flex h-full max-h-screen flex-col">
             <div className="flex h-14 items-center px-6 lg:h-[60px]">
                 <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary">
-                    <div className="bg-primary text-primary-foreground rounded-lg p-2 flex items-center justify-center">
-                       <svg fill="#ffffff" height="20px" width="20px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M29.5,8.5L16,1.5L2.5,8.5l13.5,7L29.5,8.5z M2,11.3l13.5,6.9v10.3L2,21.6V11.3z M16.5,28.5v-10.3L30,11.3v10.3L16.5,28.5z"/></svg>
-                    </div>
-                    <span className="hidden md:inline">HOURVEST</span>
+                     <svg fill="hsl(var(--primary))" height="24px" width="24px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M29.5,8.5L16,1.5L2.5,8.5l13.5,7L29.5,8.5z M2,11.3l13.5,6.9v10.3L2,21.6V11.3z M16.5,28.5v-10.3L30,11.3v10.3L16.5,28.5z"/></svg>
+                    <span className="text-sidebar-foreground">HourVest</span>
                 </Link>
             </div>
             <div className="flex-1 mt-4">
@@ -101,10 +97,6 @@ function LeftSidebarNav() {
                             {item.label}
                         </Link>
                     ))}
-                    <Link href="#" className="mt-4 flex items-center gap-3 rounded-lg px-3 py-2 text-primary-foreground/50 transition-all cursor-not-allowed">
-                        <FileClock className="h-4 w-4" />
-                        Pronto más opciones...
-                    </Link>
                 </nav>
             </div>
         </div>
@@ -368,6 +360,7 @@ export default function TeacherDashboard() {
                                     </ResponsiveContainer>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                         <span className="text-3xl font-bold text-foreground">{averageProgress.toFixed(0)}%</span>
+                                        <Target className="h-5 w-5 text-muted-foreground" />
                                     </div>
                                 </div>
                             </CardContent>

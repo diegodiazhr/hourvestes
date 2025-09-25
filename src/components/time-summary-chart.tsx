@@ -2,16 +2,15 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Project } from '@/lib/types';
 import { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 export function TimeSummaryChart({ projects }: { projects: Project[] }) {
 
   const data = useMemo(() => {
-    const monthlySummary: { [key: string]: number } = {};
-    const monthOrder = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-    // Initialize last 6 months
     const today = new Date();
     const last6Months: { name: string; hours: number }[] = [];
+
+    // Initialize the last 6 months in order from oldest to newest
     for (let i = 5; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthName = d.toLocaleString('es-ES', { month: 'short' }).replace('.', '');
@@ -22,15 +21,20 @@ export function TimeSummaryChart({ projects }: { projects: Project[] }) {
       project.timeEntries?.forEach(entry => {
         if (entry.endTime) {
           const entryDate = new Date(entry.startTime);
-          const monthName = entryDate.toLocaleString('es-ES', { month: 'short' }).replace('.', '');
-          const key = monthName.charAt(0).toUpperCase() + monthName.slice(1);
           
-          const durationMs = new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime();
-          const durationHours = durationMs / (1000 * 60 * 60);
+          // Check if the entry date is within the last 6 months
+          const diffMonths = (today.getFullYear() - entryDate.getFullYear()) * 12 + (today.getMonth() - entryDate.getMonth());
+          if (diffMonths >= 0 && diffMonths < 6) {
+             const monthName = entryDate.toLocaleString('es-ES', { month: 'short' }).replace('.', '');
+             const key = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+            
+             const durationMs = new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime();
+             const durationHours = durationMs / (1000 * 60 * 60);
 
-          const monthInSummary = last6Months.find(m => m.name === key);
-          if (monthInSummary) {
-            monthInSummary.hours += durationHours;
+             const monthInSummary = last6Months.find(m => m.name === key);
+             if (monthInSummary) {
+               monthInSummary.hours += durationHours;
+             }
           }
         }
       });
@@ -46,14 +50,19 @@ export function TimeSummaryChart({ projects }: { projects: Project[] }) {
 
   if (projects.length === 0) {
     return (
-        <div className="flex items-center justify-center h-full min-h-[250px] text-muted-foreground">
-            <p>No hay datos de tiempo para mostrar.</p>
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-base">Horas dedicadas</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[300px] flex items-center justify-center">
+                 <p className="text-muted-foreground">No hay datos de tiempo para mostrar.</p>
+            </CardContent>
+        </Card>
     );
   }
 
   return (
-    <div style={{ width: '100%', height: 250 }}>
+    <div className='h-full w-full' style={{ minHeight: '300px' }}>
       <ResponsiveContainer>
         <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
           <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />

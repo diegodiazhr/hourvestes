@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
+import { getProjectsForStudent } from '@/lib/data';
+import { Button } from './ui/button';
 
 function StudentProgressCard({ student }: { student: UserProfile & { totalHours: number } }) {
     const progress = useMemo(() => Math.min((student.totalHours / GOAL_HOURS) * 100, 100), [student.totalHours]);
@@ -21,7 +23,6 @@ function StudentProgressCard({ student }: { student: UserProfile & { totalHours:
                     </Avatar>
                     <div>
                         <CardTitle className="text-lg">{student.name}</CardTitle>
-                        <CardDescription>{student.email}</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>

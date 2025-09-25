@@ -1,3 +1,4 @@
+
 import type { Timestamp } from "firebase/firestore";
 
 export type CASCategory = 'Creatividad' | 'Actividad' | 'Servicio';
@@ -26,8 +27,10 @@ export type Evidence = {
 };
 
 export type TimeEntry = {
-  startTime: string;
-  endTime: string | null;
+  startTime: string; // ISO String. For manual entries, this is the start of the day.
+  endTime: string | null; // ISO String or null for active timers. For manual entries, this is the calculated end time.
+  manual?: boolean; // Flag to indicate a manual entry
+  durationHours?: number; // Stores the manually entered duration
 }
 
 export type Project = {

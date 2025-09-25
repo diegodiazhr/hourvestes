@@ -5,8 +5,10 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 const TimeEntrySchema = z.object({
-  startTime: z.string(), // ISO String
-  endTime: z.string().nullable(), // ISO String
+  startTime: z.string().datetime(),
+  endTime: z.string().datetime().nullable(),
+  manual: z.boolean().optional(),
+  durationHours: z.number().optional(),
 });
 
 const UpdateRequestSchema = z.object({
@@ -82,5 +84,3 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 });
   }
 }
-
-    

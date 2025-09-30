@@ -71,7 +71,7 @@ export function TimeSummaryChart({ projects }: { projects: Project[] }) {
             cursor={{fill: 'hsl(var(--muted))', radius: 'var(--radius)'}}
             contentStyle={{background: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)'}}
             labelStyle={{fontWeight: 'bold'}}
-            formatter={(value: number) => [`${value.toFixed(0)} horas`, undefined]}
+            formatter={(value: number) => [`${value.toFixed(0)} horas`, "Horas"]}
           />
           <Bar dataKey="hours" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
         </BarChart>

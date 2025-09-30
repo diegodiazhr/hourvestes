@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -42,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { CasCategoryIcon } from './cas-category-icon';
 import { Skeleton } from './ui/skeleton';
@@ -345,6 +347,9 @@ export default function TeacherDashboard() {
                                         <SelectValue placeholder="Clase" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Select a class</DialogTitle>
+                                      </DialogHeader>
                                         <SelectItem value="all">Todas</SelectItem>
                                         {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                     </SelectContent>

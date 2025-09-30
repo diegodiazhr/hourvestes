@@ -408,9 +408,8 @@ const CreateSchoolSchema = z.object({
     teacherName: z.string().min(2, "El nombre del profesor es requerido."),
 });
 
-export async function createSchoolAndInviteTeacherAction(formData: FormData) {
+export async function createSchoolAndInviteTeacherAction(adminUid: string, formData: FormData) {
     const { adminDb, adminAuth } = await getFirebaseAdmin();
-    const adminUid = await getUserIdFromToken();
 
     const adminProfile = (await adminDb.collection('users').doc(adminUid).get()).data();
     if (!adminProfile || adminProfile.role !== 'Administrador') {

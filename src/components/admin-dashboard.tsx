@@ -37,7 +37,7 @@ function AdminDashboardSkeleton() {
 }
 
 
-function CreateSchoolDialog({ onSchoolCreated }: { onSchoolCreated: () => void }) {
+function CreateSchoolDialog({ adminUid, onSchoolCreated }: { adminUid: string; onSchoolCreated: () => void }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
@@ -46,7 +46,7 @@ function CreateSchoolDialog({ onSchoolCreated }: { onSchoolCreated: () => void }
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
         startTransition(async () => {
-            const result = await createSchoolAndInviteTeacherAction(formData);
+            const result = await createSchoolAndInviteTeacherAction(adminUid, formData);
             if (result.success) {
                 toast({ title: '¡Institución Creada!', description: `Se ha creado ${result.data.schoolName} y se ha invitado a ${result.data.teacherEmail}.` });
                 onSchoolCreated();
@@ -105,7 +105,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ users: 0, schools: 0 });
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
-  const { userProfile } = useAuth();
+  const { user, userProfile } = useAuth();
   
   const fetchData = async () => {
     setLoading(true);
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
                     <CardTitle>Gestión de Instituciones</CardTitle>
                     <CardDescription>Crea, visualiza y gestiona las instituciones de la plataforma.</CardDescription>
                 </div>
-                <CreateSchoolDialog onSchoolCreated={fetchData} />
+                {user && <CreateSchoolDialog adminUid={user.uid} onSchoolCreated={fetchData} />}
             </CardHeader>
             <CardContent>
                 <Table>

@@ -10,22 +10,20 @@ import { cookies } from 'next/headers';
 import { randomUUID } from 'crypto';
 import * as mime from 'mime-types';
 
-async function getUserIdFromToken() {
-  const { adminAuth } = await getFirebaseAdmin();
-  const token = cookies().get('fb-token')?.value;
-
-  if (!token) {
-    throw new Error('Authentication token not found.');
-  }
-
-  try {
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    return decodedToken.uid;
-  } catch (error) {
-    console.error('Error verifying ID token:', error);
-    throw new Error('Authentication token is invalid or expired.');
-  }
+async function verifyUserToken(token: string): Promise<string> {
+    const { adminAuth } = await getFirebaseAdmin();
+    if (!token) {
+        throw new Error('Authentication token not provided.');
+    }
+    try {
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        return decodedToken.uid;
+    } catch (error) {
+        console.error('Error verifying ID token:', error);
+        throw new Error('Authentication token is invalid or expired.');
+    }
 }
+
 
 // Define the shape of the data coming from the form
 const ProjectDataSchema = z.object({
@@ -45,12 +43,9 @@ type ProjectData = z.infer<typeof ProjectDataSchema>;
 
 export async function createProjectAction(data: ProjectData) {
   const { adminDb } = await getFirebaseAdmin();
-  let uid: string;
-  try {
-     uid = await getUserIdFromToken();
-  } catch(e: any) {
-    throw e;
-  }
+  const token = cookies().get('fb-token')?.value;
+  if (!token) throw new Error("Authentication token not found");
+  const uid = await verifyUserToken(token);
 
 
   // Zod validation on the server
@@ -96,12 +91,9 @@ const UpdateProjectDetailsSchema = z.object({
 
 export async function updateProjectDetailsAction(projectId: string, data: z.infer<typeof UpdateProjectDetailsSchema>) {
     const { adminDb } = await getFirebaseAdmin();
-    let uid: string;
-    try {
-        uid = await getUserIdFromToken();
-    } catch(e: any) {
-        throw e;
-    }
+    const token = cookies().get('fb-token')?.value;
+    if (!token) throw new Error("Authentication token not found");
+    const uid = await verifyUserToken(token);
 
     const validatedFields = UpdateProjectDetailsSchema.safeParse(data);
 
@@ -149,11 +141,21 @@ function getEvidenceType(mimeType: string): Evidence['type'] {
 }
 
 
-export async function addEvidenceAction(projectId: string, formData: FormData) {
+export async function addEvidenceAction(
+    projectId: string,
+    userId: string,
+    token: string,
+    formData: FormData
+) {
     const { adminDb, adminStorage } = await getFirebaseAdmin();
     let uid: string;
     try {
-        uid = await getUserIdFromToken();
+        // Verify the token belongs to the user
+        const decodedUid = await verifyUserToken(token);
+        if (decodedUid !== userId) {
+            return { success: false, error: 'Token-UID mismatch.' };
+        }
+        uid = decodedUid;
     } catch (e: any) {
         return { success: false, error: e.message };
     }
@@ -227,7 +229,10 @@ const CreateClassSchema = z.object({
 
 export async function createClassAction(formData: FormData) {
   const { adminDb } = await getFirebaseAdmin();
-  const uid = await getUserIdFromToken();
+  const token = cookies().get('fb-token')?.value;
+  if (!token) throw new Error("Authentication token not found");
+  const uid = await verifyUserToken(token);
+  
   const userProfile = (await adminDb.collection('users').doc(uid).get()).data();
 
   if (!userProfile || userProfile.role !== 'Profesor') {
@@ -269,7 +274,9 @@ const SchoolSettingsSchema = z.object({
 
 export async function updateSchoolSettingsAction(formData: FormData) {
     const { adminDb, adminStorage } = await getFirebaseAdmin();
-    const uid = await getUserIdFromToken();
+    const token = cookies().get('fb-token')?.value;
+    if (!token) throw new Error("Authentication token not found");
+    const uid = await verifyUserToken(token);
 
     const aiEnabled = formData.get('aiEnabled') === 'true';
     const logoFile = formData.get('logo');

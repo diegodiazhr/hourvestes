@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { addEvidenceAction } from '@/lib/actions';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
 
 function EvidenceItem({ item }: { item: Evidence }) {
     const renderContent = () => {
@@ -68,12 +69,19 @@ function EvidenceItem({ item }: { item: Evidence }) {
 
 export function EvidenceSection({ project }: { project: Project }) {
     const { toast } = useToast();
+    const { user } = useAuth();
     const [isPending, setIsPending] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const handleAddEvidence = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setIsPending(true);
+
+        if (!user) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Debes iniciar sesión para añadir evidencia.' });
+            setIsPending(false);
+            return;
+        }
 
         const formData = new FormData(event.currentTarget);
         const file = formData.get('file') as File;
@@ -90,22 +98,32 @@ export function EvidenceSection({ project }: { project: Project }) {
             return;
         }
 
-        const result = await addEvidenceAction(project.id, formData);
+        try {
+            const token = await user.getIdToken();
+            const result = await addEvidenceAction(project.id, user.uid, token, formData);
 
-        if (result.success) {
-            toast({
-                title: "¡Evidencia Añadida!",
-                description: "Tu nueva evidencia ha sido subida y guardada.",
-            });
-            setIsDialogOpen(false);
-        } else {
-            toast({
+            if (result.success) {
+                toast({
+                    title: "¡Evidencia Añadida!",
+                    description: "Tu nueva evidencia ha sido subida y guardada.",
+                });
+                setIsDialogOpen(false);
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: 'Error al subir evidencia',
+                    description: result.error || 'No se pudo procesar la subida.',
+                });
+            }
+        } catch (error: any) {
+             toast({
                 variant: 'destructive',
-                title: 'Error al subir evidencia',
-                description: result.error || 'No se pudo procesar la subida.',
+                title: 'Error de Autenticación',
+                description: error.message || 'No se pudo obtener el token de autenticación.',
             });
+        } finally {
+            setIsPending(false);
         }
-        setIsPending(false);
     };
 
   return (

@@ -2,6 +2,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth, type Auth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -27,6 +28,9 @@ function initializeFirebaseClient() {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                if (firebaseConfig.storageBucket) {
+                    getStorage(app);
+                }
             } catch(e) {
                 console.error("Error initializing Firebase:", e);
             }
@@ -37,6 +41,9 @@ function initializeFirebaseClient() {
         app = getApp();
         auth = getAuth(app);
         db = getFirestore(app);
+        if (firebaseConfig.storageBucket) {
+            getStorage(app);
+        }
     }
 }
 

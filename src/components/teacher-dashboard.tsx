@@ -348,7 +348,7 @@ export default function TeacherDashboard() {
                                     </SelectTrigger>
                                     <SelectContent>
                                       <DialogHeader>
-                                        <DialogTitle>Select a class</DialogTitle>
+                                        <DialogTitle>Selecciona una clase</DialogTitle>
                                       </DialogHeader>
                                         <SelectItem value="all">Todas</SelectItem>
                                         {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}

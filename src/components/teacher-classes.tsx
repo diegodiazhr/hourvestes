@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useEffect, useState, useTransition } from 'react';
 import { useAuth } from '@/hooks/use-auth';
@@ -128,7 +129,8 @@ function CopyClassCodeButton({ classId }: { classId: string }) {
     const { toast } = useToast();
     const [copied, setCopied] = useState(false);
 
-    const handleCopy = () => {
+    const handleCopy = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation(); // Prevent accordion from toggling
         navigator.clipboard.writeText(classId).then(() => {
             setCopied(true);
             toast({
@@ -218,24 +220,26 @@ export function TeacherClasses() {
           <Accordion type="single" collapsible defaultValue={`class-${classes[0].id}`} className="w-full">
             {classes.map((cls) => (
                 <AccordionItem value={`class-${cls.id}`} key={cls.id}>
-                    <AccordionTrigger className="hover:no-underline">
-                        <div className='flex flex-1 justify-between items-center pr-4'>
-                            <div className="flex flex-col sm:flex-row sm:items-center text-left sm:gap-4">
-                                <h2 className="text-xl font-semibold text-left">{cls.name}</h2>
-                                <div className="flex items-center text-sm text-muted-foreground gap-4">
-                                    <div className="flex items-center">
-                                        <Users className="mr-2 h-4 w-4" />
-                                        {cls.studentCount} {cls.studentCount === 1 ? 'alumno' : 'alumnos'}
-                                    </div>
-                                    <div className="hidden sm:flex items-center">
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        Fin: {format(cls.casEndDate, 'dd/MM/yyyy')}
+                    <div className="flex items-center pr-4 border-b">
+                        <AccordionTrigger className="flex-1 hover:no-underline pr-0">
+                            <div className='flex justify-between items-center'>
+                                <div className="flex flex-col sm:flex-row sm:items-center text-left sm:gap-4">
+                                    <h2 className="text-xl font-semibold text-left">{cls.name}</h2>
+                                    <div className="flex items-center text-sm text-muted-foreground gap-4">
+                                        <div className="flex items-center">
+                                            <Users className="mr-2 h-4 w-4" />
+                                            {cls.studentCount} {cls.studentCount === 1 ? 'alumno' : 'alumnos'}
+                                        </div>
+                                        <div className="hidden sm:flex items-center">
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            Fin: {format(cls.casEndDate, 'dd/MM/yyyy')}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                           <CopyClassCodeButton classId={cls.id} />
-                        </div>
-                    </AccordionTrigger>
+                        </AccordionTrigger>
+                        <CopyClassCodeButton classId={cls.id} />
+                    </div>
                     <AccordionContent className="space-y-4 pt-4">
                         {cls.students.length > 0 ? (
                              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -257,8 +261,8 @@ export function TeacherClasses() {
       ) : (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-2xl">¡Bienvenido a HourVest!</CardTitle>
-            <CardDescription>Sigue estos dos sencillos pasos para empezar a gestionar a tus alumnos.</CardDescription>
+            <DialogTitle>¡Bienvenido a HourVest!</DialogTitle>
+            <DialogDescription>Sigue estos dos sencillos pasos para empezar a gestionar a tus alumnos.</DialogDescription>
           </CardHeader>
           <CardContent className="space-y-6">
               <div className="flex items-start gap-4">
@@ -282,3 +286,5 @@ export function TeacherClasses() {
     </div>
   );
 }
+
+    

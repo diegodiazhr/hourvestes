@@ -447,8 +447,8 @@ export async function createSchoolAndInviteTeacherAction(adminUid: string, formD
             });
 
             // In a real app, you would email this link to the user.
-            // const actionLink = await adminAuth.generatePasswordResetLink(teacherEmail);
-            console.log(`ACTION LINK FOR ${teacherEmail}: Set initial password with temp password: ${tempPassword}`);
+            const actionLink = await adminAuth.generatePasswordResetLink(teacherEmail);
+            console.log(`ACTION LINK FOR ${teacherEmail}: ${actionLink} - Set initial password with temp password: ${tempPassword}`);
 
             const teacherProfile = {
                 name: teacherName,

@@ -44,12 +44,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setSchoolSettings(settings);
         }
         const token = await user.getIdToken();
-        setCookie('fb-token', token);
+        setCookie('fb-token', token, { path: '/' });
       } else {
         setUser(null);
         setUserProfile(null);
         setSchoolSettings(null);
-        deleteCookie('fb-token');
+        deleteCookie('fb-token', { path: '/' });
       }
       setLoading(false);
     });

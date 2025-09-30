@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import StudentDashboard from '@/components/student-dashboard';
 import TeacherDashboard from '@/components/teacher-dashboard';
+import AdminDashboard from '@/components/admin-dashboard';
 import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 
 export default function Home() {
@@ -12,6 +13,10 @@ export default function Home() {
   
   if (loading || !user) {
     return <DashboardSkeleton />;
+  }
+
+  if (userProfile?.role === 'Administrador') {
+    return <AdminDashboard />;
   }
 
   if (userProfile?.role === 'Profesor') {

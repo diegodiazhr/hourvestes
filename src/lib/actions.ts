@@ -400,3 +400,81 @@ export async function signupStudentAction(data: unknown) {
         return { success: false, error: "Ocurrió un error inesperado durante el registro." };
     }
 }
+
+// Admin action
+const CreateSchoolSchema = z.object({
+    schoolName: z.string().min(3, "El nombre de la institución es requerido."),
+    teacherEmail: z.string().email("El correo del profesor no es válido."),
+    teacherName: z.string().min(2, "El nombre del profesor es requerido."),
+});
+
+export async function createSchoolAndInviteTeacherAction(formData: FormData) {
+    const { adminDb, adminAuth } = await getFirebaseAdmin();
+    const adminUid = await getUserIdFromToken();
+
+    const adminProfile = (await adminDb.collection('users').doc(adminUid).get()).data();
+    if (!adminProfile || adminProfile.role !== 'Administrador') {
+        return { success: false, error: 'No tienes permisos de administrador.' };
+    }
+
+    const validation = CreateSchoolSchema.safeParse({
+        schoolName: formData.get('schoolName'),
+        teacherEmail: formData.get('teacherEmail'),
+        teacherName: formData.get('teacherName'),
+    });
+
+    if (!validation.success) {
+        return { success: false, error: "Datos inválidos.", details: validation.error.flatten() };
+    }
+
+    const { schoolName, teacherEmail, teacherName } = validation.data;
+
+    try {
+        // Use a transaction to ensure all or nothing
+        await adminDb.runTransaction(async (transaction) => {
+            const schoolRef = adminDb.collection('schools').doc(schoolName);
+            const schoolDoc = await transaction.get(schoolRef);
+
+            if (schoolDoc.exists) {
+                throw new Error(`La institución "${schoolName}" ya existe.`);
+            }
+            
+            // Create a temporary password. The user will be forced to change it.
+            const tempPassword = randomUUID().substring(0, 8);
+            const teacherRecord = await adminAuth.createUser({
+                email: teacherEmail,
+                password: tempPassword,
+                displayName: teacherName,
+            });
+
+            // In a real app, you would email this link to the user.
+            // const actionLink = await adminAuth.generatePasswordResetLink(teacherEmail);
+            console.log(`ACTION LINK FOR ${teacherEmail}: Set initial password with temp password: ${tempPassword}`);
+
+            const teacherProfile = {
+                name: teacherName,
+                email: teacherEmail,
+                role: 'Profesor' as const,
+                school: schoolName,
+            };
+            transaction.set(adminDb.collection('users').doc(teacherRecord.uid), teacherProfile);
+
+            const schoolData = {
+                name: schoolName,
+                adminTeacherId: teacherRecord.uid,
+                aiEnabled: false,
+            };
+            transaction.set(schoolRef, schoolData);
+        });
+
+        revalidatePath('/'); // Revalidate admin dashboard
+        return { success: true, data: { schoolName, teacherEmail } };
+
+    } catch (error: any) {
+        console.error("Error creating school and inviting teacher:", error);
+        if (error.code === 'auth/email-already-exists') {
+             return { success: false, error: 'El correo del profesor ya está en uso.' };
+        }
+        return { success: false, error: error.message || "Ocurrió un error inesperado." };
+    }
+}

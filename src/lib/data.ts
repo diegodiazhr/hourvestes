@@ -1,5 +1,4 @@
 
-
 import { collection, getDocs, doc, getDoc, orderBy, query, where, onSnapshot, DocumentData } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Project, ProjectDocument, UserProfile, Class, ClassDocument, School, SchoolDocument } from './types';
@@ -177,4 +176,19 @@ export async function getSchoolSettings(schoolId: string): Promise<School | null
       return docToSchool(schoolDoc.data(), schoolDoc.id);
     }
     return null;
+}
+
+// Admin-specific data functions
+export async function getAllUsers(): Promise<UserProfile[]> {
+    if (!db) return [];
+    const usersCol = collection(db, 'users');
+    const userSnapshot = await getDocs(usersCol);
+    return userSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
+}
+
+export async function getAllSchools(): Promise<School[]> {
+    if (!db) return [];
+    const schoolsCol = collection(db, 'schools');
+    const schoolSnapshot = await getDocs(schoolsCol);
+    return schoolSnapshot.docs.map(docSnap => docToSchool(docSnap.data(), docSnap.id));
 }

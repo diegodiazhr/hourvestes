@@ -56,7 +56,7 @@ export type ProjectDocument = Omit<Project, 'id' | 'startDate' | 'endDate' | 'ev
     evidence: Omit<Evidence, 'date'> & { date: Timestamp }[];
 }
 
-export type UserRole = 'Alumno' | 'Profesor';
+export type UserRole = 'Alumno' | 'Profesor' | 'Administrador';
 
 export type UserProfile = {
   id: string;

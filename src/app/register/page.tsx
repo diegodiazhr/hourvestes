@@ -64,13 +64,19 @@ export default function RegisterPage() {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const user = userCredential.user;
+
+        // Assign role based on email
+        const isAdmin = values.email === 'admin@hourvest.com';
+        const role = isAdmin ? 'Administrador' : 'Profesor';
+
          await setDoc(doc(db, 'users', user.uid), {
             name: values.name,
             email: values.email,
-            role: 'Profesor',
+            role: role,
             school: values.school,
         });
-        toast({ title: '¡Cuenta Creada!', description: 'Tu cuenta de profesor ha sido creada.' });
+
+        toast({ title: '¡Cuenta Creada!', description: `Tu cuenta de ${role.toLowerCase()} ha sido creada.` });
         router.push('/');
     } catch (error: any) {
         let description = 'Ocurrió un error inesperado.';
@@ -90,13 +96,13 @@ export default function RegisterPage() {
         <div className="text-center mb-6">
             <BookOpenCheck className="h-10 w-10 mx-auto text-primary" />
             <h1 className="text-3xl font-bold font-headline mt-2">HourVest</h1>
-            <p className="text-muted-foreground">Crea una cuenta de profesor</p>
+            <p className="text-muted-foreground">Crea una cuenta de profesor o administrador</p>
         </div>
         <Card>
           <CardHeader>
             <CardTitle>Registro de Profesor</CardTitle>
             <CardDescription>
-                Crea una cuenta de profesor para gestionar tus clases y alumnos.
+                Crea una cuenta para gestionar tus clases y alumnos.
             </CardDescription>
           </CardHeader>
           <Form {...form}>
@@ -158,7 +164,7 @@ export default function RegisterPage() {
               <CardFooter className="flex flex-col gap-4">
                 <Button type="submit" className="w-full" disabled={isPending}>
                   {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Crear Cuenta de Profesor
+                  Crear Cuenta
                 </Button>
                 <p className="text-sm text-center text-muted-foreground">
                     ¿Eres un alumno?{' '}

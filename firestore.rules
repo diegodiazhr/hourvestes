@@ -1,50 +1,45 @@
 
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is a teacher
-    function isTeacher() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor';
-    }
-
-    // Helper function to check if the requesting user is the teacher of a given student
-    function isTheirTeacher(studentId) {
-      return request.auth.uid == get(/databases/$(database)/documents/users/$(studentId)).data.teacherId;
-    }
-
-    // Projects can be read by their owner or their teacher.
-    // They can only be created/updated by their owner.
-    match /projects/{projectId} {
-      allow read: if request.auth.uid == resource.data.userId || isTheirTeacher(resource.data.userId);
+    // Users can only read their own profile, but teachers can read their students' profiles.
+    match /users/{userId} {
+      allow read: if request.auth != null && 
+                    (request.auth.uid == userId || 
+                     exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor' &&
+                     resource.data.teacherId == request.auth.uid);
       allow create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
     }
 
-    // User profiles can be read by the user themselves, or by their teacher.
-    // Users can only write to their own profile.
-    match /users/{userId} {
-      allow read: if request.auth.uid == userId || isTheirTeacher(userId);
-      allow write: if request.auth.uid == userId;
+    // Projects can only be managed by their owner (the student). Teachers can read them.
+    match /projects/{projectId} {
+      allow read: if request.auth != null && 
+                  (request.auth.uid == resource.data.userId || 
+                   exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor' &&
+                   resource.data.userId in get(/databases/$(database)/documents/classes/$(get(/databases/$(database)/documents/users/$(resource.data.userId)).data.classId)).data.students);
+      allow create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    // Teachers can read all students in their class.
-    match /users/{userId} {
-      allow list: if isTeacher();
-    }
-    
-    // Classes can be read by any authenticated user (to get invite details)
-    // and can only be created/updated by a teacher.
+    // Classes can be read by the teacher who owns them. Students can't read class lists directly.
     match /classes/{classId} {
-        allow read: if request.auth != null;
-        allow write: if isTeacher();
+      allow read: if request.auth != null && 
+                  get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor' &&
+                  resource.data.teacherId == request.auth.uid;
+      // Writes are handled by server-side actions (admin SDK)
+      allow write: if false;
     }
 
-    // School settings can be read by anyone, but only updated by a teacher
-    // belonging to that school.
+    // School settings can be read by any authenticated user within the school.
     match /schools/{schoolId} {
-        allow read;
-        allow write: if isTeacher() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.school == schoolId;
+        allow read: if request.auth != null && 
+                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.school == schoolId;
+        // Writes are handled by server-side actions (admin SDK)
+        allow write: if false;
     }
   }
 }

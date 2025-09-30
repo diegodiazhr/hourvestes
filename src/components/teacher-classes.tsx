@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { Loader2, PlusCircle, Link as LinkIcon, User, Users, Calendar as CalendarIcon, Check } from 'lucide-react';
+import { Loader2, PlusCircle, Copy, User, Users, Calendar as CalendarIcon, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Accordion,
@@ -49,6 +49,7 @@ function CreateClassForm({ onClassCreated }: { onClassCreated: () => void }) {
           toast({ title: '¡Clase creada!', description: 'Tu nueva clase ha sido creada correctamente.' });
           setOpen(false);
           setDate(undefined);
+          (event.target as HTMLFormElement).reset();
           onClassCreated();
         } else {
           toast({ variant: 'destructive', title: 'Error', description: result.error });
@@ -123,25 +124,27 @@ function CreateClassForm({ onClassCreated }: { onClassCreated: () => void }) {
     );
   }
 
-function InviteLinkButton({ classId }: { classId: string }) {
+function CopyClassCodeButton({ classId }: { classId: string }) {
     const { toast } = useToast();
+    const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
-        const inviteLink = `${window.location.origin}/register?classId=${classId}`;
-        navigator.clipboard.writeText(inviteLink).then(() => {
+        navigator.clipboard.writeText(classId).then(() => {
+            setCopied(true);
             toast({
-                title: '¡Enlace Copiado!',
-                description: 'El enlace de invitación para esta clase ha sido copiado a tu portapapeles.',
+                title: '¡Código Copiado!',
+                description: 'El código de la clase se ha copiado a tu portapapeles.',
             });
+            setTimeout(() => setCopied(false), 2000);
         }).catch(() => {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo copiar el enlace.' });
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo copiar el código.' });
         });
     };
 
     return (
         <Button variant="outline" size="sm" onClick={handleCopy}>
-            <LinkIcon className="mr-2 h-4 w-4" />
-            Copiar enlace de invitación
+            {copied ? <Check className="mr-2 h-4 w-4 text-green-500" /> : <Copy className="mr-2 h-4 w-4" />}
+            {copied ? 'Copiado' : 'Copiar código de clase'}
         </Button>
     )
 }
@@ -230,7 +233,7 @@ export function TeacherClasses() {
                                     </div>
                                 </div>
                             </div>
-                           <InviteLinkButton classId={cls.id} />
+                           <CopyClassCodeButton classId={cls.id} />
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-4">
@@ -244,7 +247,7 @@ export function TeacherClasses() {
                             <div className="text-center py-8 border-2 border-dashed rounded-lg">
                                 <User className="mx-auto h-10 w-10 text-muted-foreground" />
                                 <p className="mt-4 font-semibold text-muted-foreground">Aún no hay alumnos en esta clase</p>
-                                <p className="text-sm text-muted-foreground">Copia el enlace de invitación para que puedan unirse.</p>
+                                <p className="text-sm text-muted-foreground">Copia el código de clase para que puedan unirse.</p>
                             </div>
                         )}
                     </AccordionContent>
@@ -270,7 +273,7 @@ export function TeacherClasses() {
                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground font-bold">2</div>
                    <div className="flex-1">
                        <h3 className="text-lg font-semibold">Invita a tus alumnos</h3>
-                       <p className="text-muted-foreground">Una vez creada la clase, podrás copiar un enlace de invitación único para compartir con tus alumnos. ¡Ellos harán el resto!</p>
+                       <p className="text-muted-foreground">Una vez creada la clase, podrás copiar un código de invitación único para compartir con tus alumnos. ¡Ellos harán el resto!</p>
                   </div>
               </div>
           </CardContent>

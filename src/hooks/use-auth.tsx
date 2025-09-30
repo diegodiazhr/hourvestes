@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
 });
 
-const publicRoutes = ['/login', '/register'];
+const publicRoutes = ['/login', '/register', '/signup-alumno'];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);

@@ -334,3 +334,69 @@ export async function updateSchoolSettingsAction(formData: FormData) {
         return { success: false, error: 'No se pudieron guardar los ajustes. ' + error.message };
     }
 }
+
+
+const SignupStudentSchema = z.object({
+  firstName: z.string().min(2),
+  lastName: z.string().min(2),
+  email: z.string().email(),
+  password: z.string().min(6),
+  classCode: z.string().min(8).max(20),
+});
+
+
+export async function signupStudentAction(data: unknown) {
+    const { adminAuth, adminDb } = await getFirebaseAdmin();
+
+    const validation = SignupStudentSchema.safeParse(data);
+    if (!validation.success) {
+        return { success: false, error: "Datos de registro inválidos." };
+    }
+    
+    const { firstName, lastName, email, password, classCode } = validation.data;
+    const fullName = `${firstName} ${lastName}`;
+
+    try {
+        // 1. Check if class code is valid
+        const classRef = adminDb.collection('classes').doc(classCode);
+        const classDoc = await classRef.get();
+
+        if (!classDoc.exists) {
+            return { success: false, error: "El código de clase no es válido." };
+        }
+        const classData = classDoc.data();
+        if (!classData) {
+             return { success: false, error: "No se pudieron obtener los datos de la clase." };
+        }
+
+        // 2. Create user in Firebase Auth
+        const userRecord = await adminAuth.createUser({
+            email,
+            password,
+            displayName: fullName,
+        });
+
+        // 3. Create user profile in Firestore
+        await adminDb.collection('users').doc(userRecord.uid).set({
+            name: fullName,
+            email: email,
+            role: 'Alumno',
+            school: classData.school,
+            teacherId: classData.teacherId,
+            classId: classDoc.id,
+        });
+
+        revalidatePath('/teacher/students');
+        return { success: true };
+
+    } catch (error: any) {
+        console.error('Student signup error:', error);
+        if (error.code === 'auth/email-already-exists') {
+            return { success: false, error: "Este correo electrónico ya está en uso." };
+        }
+        if (error.code === 'auth/invalid-password') {
+            return { success: false, error: "La contraseña debe tener al menos 6 caracteres." };
+        }
+        return { success: false, error: "Ocurrió un error inesperado durante el registro." };
+    }
+}

@@ -65,16 +65,28 @@ export default function RegisterPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const user = userCredential.user;
 
-        // Assign role based on email
         const isAdmin = values.email === 'admin@hourvest.com';
         const role = isAdmin ? 'Administrador' : 'Profesor';
 
-         await setDoc(doc(db, 'users', user.uid), {
+        await setDoc(doc(db, 'users', user.uid), {
             name: values.name,
             email: values.email,
             role: role,
             school: values.school,
         });
+
+        // If a new school is created by a teacher, add it to the schools collection
+        if (role === 'Profesor') {
+            const schoolRef = doc(db, 'schools', values.school);
+            const schoolDoc = await getDoc(schoolRef);
+            if (!schoolDoc.exists()) {
+                await setDoc(schoolRef, {
+                    name: values.school,
+                    adminTeacherId: user.uid,
+                    aiEnabled: false, // Default value
+                });
+            }
+        }
 
         toast({ title: '¡Cuenta Creada!', description: `Tu cuenta de ${role.toLowerCase()} ha sido creada.` });
         router.push('/');

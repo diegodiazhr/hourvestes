@@ -29,13 +29,6 @@ function getServiceAccount() {
     return serviceAccount;
 }
 
-function getStorageBucket() {
-    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-    if (!bucketName) {
-        throw new Error('Firebase Storage bucket name could not be determined. Make sure NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is set.');
-    }
-    return bucketName;
-}
 
 // Export a function that initializes and returns the admin instances
 // This approach is safer for serverless environments like Vercel
@@ -46,11 +39,10 @@ export async function getFirebaseAdmin() {
 
   if (!app) {
     const serviceAccount = getServiceAccount();
-    const storageBucket = getStorageBucket();
     
     app = initializeApp({
       credential: cert(serviceAccount),
-      storageBucket: storageBucket,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     }, appName);
   }
 

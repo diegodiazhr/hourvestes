@@ -2,7 +2,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth, type Auth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -15,9 +15,10 @@ const firebaseConfig = {
 };
 
 // Singleton pattern to initialize Firebase on the client side
-let app: FirebaseApp | undefined;
-let auth: Auth | undefined;
-let db: Firestore | undefined;
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
 
 
 function initializeFirebaseClient() {
@@ -29,7 +30,7 @@ function initializeFirebaseClient() {
                 auth = getAuth(app);
                 db = getFirestore(app);
                 if (firebaseConfig.storageBucket) {
-                    getStorage(app);
+                    storage = getStorage(app);
                 }
             } catch(e) {
                 console.error("Error initializing Firebase:", e);
@@ -42,7 +43,7 @@ function initializeFirebaseClient() {
         auth = getAuth(app);
         db = getFirestore(app);
         if (firebaseConfig.storageBucket) {
-            getStorage(app);
+            storage = getStorage(app);
         }
     }
 }
@@ -52,4 +53,4 @@ initializeFirebaseClient();
 
 
 // Export instances. They might be undefined if initialization fails.
-export { app, auth, db };
+export { app, auth, db, storage };

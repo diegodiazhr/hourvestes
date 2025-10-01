@@ -122,56 +122,35 @@ export async function updateProjectDetailsAction(projectId: string, data: z.infe
     revalidatePath('/');
 }
 
-// Action to add evidence
-const EvidenceSchema = z.object({
-  title: z.string().min(3, 'El título es requerido.'),
-  file: z
-    .any()
-    .refine(file => file && file.size > 0, 'El archivo no puede estar vacío.'),
+// Action to SAVE evidence metadata to Firestore
+const SaveEvidenceSchema = z.object({
+  projectId: z.string(),
+  evidenceData: z.object({
+    title: z.string(),
+    url: z.string().url(),
+    type: z.string(),
+    fileName: z.string(),
+  })
 });
 
-function getEvidenceType(mimeType: string): Evidence['type'] {
-    if (mimeType.startsWith('image/')) return 'image';
-    if (mimeType.startsWith('video/')) return 'video';
-    if (mimeType === 'application/pdf' || mimeType.startsWith('application/vnd.openxmlformats-officedocument') || mimeType.startsWith('application/msword')) {
-        return 'document';
-    }
-    return 'other';
-}
-
-
-export async function addEvidenceAction(
-    projectId: string,
-    userId: string,
-    token: string,
-    formData: FormData
+export async function saveEvidenceAction(
+    data: z.infer<typeof SaveEvidenceSchema>
 ) {
-    const { adminDb, adminStorage } = await getFirebaseAdmin();
-    let uid: string;
-    try {
-        if (!token) {
-            throw new Error('Authentication token not provided.');
-        }
-        // Verify the token belongs to the user
-        const decodedUid = await verifyUserToken(token);
-        if (decodedUid !== userId) {
-            return { success: false, error: 'Token-UID mismatch.' };
-        }
-        uid = decodedUid;
-    } catch (e: any) {
-        return { success: false, error: e.message };
+    const { adminDb } = await getFirebaseAdmin();
+    
+    const token = cookies().get('fb-token')?.value;
+    if (!token) {
+        return { success: false, error: 'Authentication token not found' };
     }
+    const uid = await verifyUserToken(token);
 
-    const validatedFields = EvidenceSchema.safeParse({
-        title: formData.get('title'),
-        file: formData.get('file'),
-    });
+    const validatedFields = SaveEvidenceSchema.safeParse(data);
 
     if (!validatedFields.success) {
         return { success: false, error: 'Datos de evidencia inválidos.', details: validatedFields.error.flatten() };
     }
 
-    const { title, file } = validatedFields.data;
+    const { projectId, evidenceData } = validatedFields.data;
 
     // --- Authorization ---
     const projectRef = adminDb.collection('projects').doc(projectId);
@@ -182,45 +161,22 @@ export async function addEvidenceAction(
     // --- End Authorization ---
 
     try {
-        const fileBuffer = Buffer.from(await file.arrayBuffer());
-        const fileId = randomUUID();
-        const fileExtension = mime.extension(file.type) || file.name.split('.').pop() || '';
-        const fileName = `${fileId}.${fileExtension}`;
-        const filePath = `evidence/${uid}/${projectId}/${fileName}`;
-
-        const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-        if (!bucketName) {
-            throw new Error("Firebase Storage bucket name is not configured. Please set NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET environment variable.");
-        }
-        const bucket = adminStorage.bucket(bucketName);
-        const storageFile = bucket.file(filePath);
-        
-        await storageFile.save(fileBuffer, {
-            metadata: { contentType: file.type },
-        });
-
-        // Make the file public to get a URL
-        await storageFile.makePublic();
-        const publicUrl = storageFile.publicUrl();
-
-        const newEvidence: Omit<Evidence, 'id' | 'date'> & { date: Timestamp } = {
-            title,
-            url: publicUrl,
-            type: getEvidenceType(file.type),
-            fileName: file.name,
+        const newEvidenceForDb = {
+            ...evidenceData,
+            id: randomUUID(),
             date: Timestamp.now(),
         };
 
         await projectRef.update({
-            evidence: FieldValue.arrayUnion(newEvidence),
+            evidence: FieldValue.arrayUnion(newEvidenceForDb),
         });
 
         revalidatePath(`/projects/${projectId}`);
-        return { success: true, data: { ...newEvidence, id: fileId, date: newEvidence.date.toDate().toISOString() }};
+        return { success: true, data: newEvidenceForDb };
 
     } catch (error: any) {
-        console.error('Error adding evidence:', error);
-        return { success: false, error: 'No se pudo subir el archivo. ' + (error.message || '') };
+        console.error('Error saving evidence to Firestore:', error);
+        return { success: false, error: 'No se pudo guardar la evidencia en la base de datos. ' + (error.message || '') };
     }
 }
 

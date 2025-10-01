@@ -24,9 +24,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { addEvidenceAction } from '@/lib/actions';
+import { saveEvidenceAction } from '@/lib/actions';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { randomUUID } from 'crypto';
+
+function getEvidenceType(mimeType: string): Evidence['type'] {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType === 'application/pdf' || mimeType.startsWith('application/vnd.openxmlformats-officedocument') || mimeType.startsWith('application/msword')) {
+      return 'document';
+  }
+  return 'other';
+}
 
 function EvidenceItem({ item }: { item: Evidence }) {
     const renderContent = () => {
@@ -74,11 +86,9 @@ export function EvidenceSection({ project }: { project: Project }) {
 
     const handleAddEvidence = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setIsPending(true);
-
+        
         if (!user) {
             toast({ variant: 'destructive', title: 'Error', description: 'Debes iniciar sesión para añadir evidencia.' });
-            setIsPending(false);
             return;
         }
 
@@ -86,24 +96,32 @@ export function EvidenceSection({ project }: { project: Project }) {
         const file = formData.get('file') as File;
         const title = formData.get('title') as string;
 
-        if (!file || file.size === 0) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Debes seleccionar un archivo.' });
-            setIsPending(false);
+        if (!file || file.size === 0 || !title) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Debes seleccionar un archivo y añadir un título.' });
             return;
         }
-         if (!title) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Debes añadir un título.' });
-            setIsPending(false);
-            return;
-        }
+
+        setIsPending(true);
 
         try {
-            const token = await user.getIdToken();
-            if (!token) {
-                throw new Error("No se pudo obtener el token de autenticación.");
-            }
+            // 1. Upload file directly to Firebase Storage from the client
+            const fileId = crypto.randomUUID();
+            const fileExtension = file.name.split('.').pop() || '';
+            const filePath = `evidence/${user.uid}/${project.id}/${fileId}.${fileExtension}`;
+            const storageRef = ref(storage, filePath);
 
-            const result = await addEvidenceAction(project.id, user.uid, token, formData);
+            const uploadResult = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(uploadResult.ref);
+
+            // 2. Call server action with the file metadata and URL
+            const evidenceData = {
+                title,
+                url: downloadURL,
+                type: getEvidenceType(file.type),
+                fileName: file.name,
+            };
+
+            const result = await saveEvidenceAction({ projectId: project.id, evidenceData });
 
             if (result.success) {
                 toast({
@@ -112,11 +130,9 @@ export function EvidenceSection({ project }: { project: Project }) {
                 });
                 setIsDialogOpen(false);
             } else {
-                toast({
-                    variant: 'destructive',
-                    title: 'Error al subir evidencia',
-                    description: result.error || 'No se pudo procesar la subida.',
-                });
+                // If saving to DB fails, we should ideally delete the uploaded file.
+                // For simplicity, we'll just show an error for now.
+                throw new Error(result.error || 'No se pudo guardar la evidencia en la base de datos.');
             }
         } catch (error: any) {
              toast({

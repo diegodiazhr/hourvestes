@@ -105,7 +105,7 @@ export function EvidenceSection({ project }: { project: Project }) {
 
         try {
             // 1. Upload file directly to Firebase Storage from the client
-            const fileId = crypto.randomUUID();
+            const fileId = randomUUID();
             const fileExtension = file.name.split('.').pop() || '';
             const filePath = `evidence/${user.uid}/${project.id}/${fileId}.${fileExtension}`;
             const storageRef = ref(storage, filePath);

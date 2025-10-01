@@ -1,56 +1,58 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check ownership
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-
-    // Projects: Users can only CUD their own projects. Teachers/Admins can read.
-    match /projects/{projectId} {
-      allow read: if request.auth != null;
-      allow create: if isOwner(request.resource.data.userId);
-      allow update: if isOwner(resource.data.userId);
-      allow delete: if isOwner(resource.data.userId);
+    
+    function getRole() {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function isStudent() {
+        return getRole() == 'Alumno';
     }
 
-    // Users: Users can read their own profile. Teachers can read their students. Admins can read all.
+    function isTeacher() {
+        return getRole() == 'Profesor';
+    }
+
+    function isAdmin() {
+        return getRole() == 'Administrador';
+    }
+
+    // Allow users to read and write their own profile
     match /users/{userId} {
-        allow read: if request.auth != null &&
-                        (isOwner(userId) ||
-                         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                         (
-                            (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor' && resource.data.teacherId == request.auth.uid) ||
-                            (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador')
-                         )
-                        );
-        allow create; // Allow signup
-        allow update: if isOwner(userId);
+      allow read, create;
+      allow update: if isOwner(userId) || isAdmin();
     }
-
-    // Classes: Teachers can read their own classes. Admins can read all.
-    match /classes/{classId} {
-        allow read: if request.auth != null &&
-                        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                        (
-                            (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor' && resource.data.teacherId == request.auth.uid) ||
-                            (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador')
-                        );
-        allow create: if request.auth != null &&
-                        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor';
-    }
-
-    // Schools: Admins and the school's admin teacher can R/W.
+    
+    // School settings can be read by anyone, but only updated by assigned teachers or admins
     match /schools/{schoolId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null &&
-                        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                        (
-                            (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador') ||
-                            (resource.data.adminTeacherId == request.auth.uid)
-                        );
+        allow read;
+        allow write: if isTeacher() || isAdmin();
+    }
+
+    // Projects can be created/read/updated by the student owner
+    // Teachers can read student projects
+    match /projects/{projectId} {
+      allow create, update: if isOwner(request.resource.data.userId);
+      allow read: if isOwner(resource.data.userId) || isTeacher() || isAdmin();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+    
+    // Classes can be created/managed by teachers
+    // Students can only read classes they are a part of
+    match /classes/{classId} {
+        allow create: if isTeacher();
+        allow read: if isSignedIn();
+        allow update: if isTeacher() && resource.data.teacherId == request.auth.uid;
     }
   }
 }

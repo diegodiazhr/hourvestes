@@ -1,4 +1,3 @@
-
 'use client';
 import Image from 'next/image';
 import {
@@ -100,6 +99,10 @@ export function EvidenceSection({ project }: { project: Project }) {
 
         try {
             const token = await user.getIdToken();
+            if (!token) {
+                throw new Error("No se pudo obtener el token de autenticación.");
+            }
+
             const result = await addEvidenceAction(project.id, user.uid, token, formData);
 
             if (result.success) {
@@ -118,8 +121,8 @@ export function EvidenceSection({ project }: { project: Project }) {
         } catch (error: any) {
              toast({
                 variant: 'destructive',
-                title: 'Error de Autenticación',
-                description: error.message || 'No se pudo obtener el token de autenticación.',
+                title: 'Error Inesperado',
+                description: error.message || 'Ocurrió un error al intentar subir la evidencia.',
             });
         } finally {
             setIsPending(false);

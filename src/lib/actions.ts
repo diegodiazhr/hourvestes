@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -150,6 +149,9 @@ export async function addEvidenceAction(
     const { adminDb, adminStorage } = await getFirebaseAdmin();
     let uid: string;
     try {
+        if (!token) {
+            throw new Error('Authentication token not provided.');
+        }
         // Verify the token belongs to the user
         const decodedUid = await verifyUserToken(token);
         if (decodedUid !== userId) {

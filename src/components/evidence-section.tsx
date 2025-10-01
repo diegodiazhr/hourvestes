@@ -29,7 +29,6 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { randomUUID } from 'crypto';
 
 function getEvidenceType(mimeType: string): Evidence['type'] {
   if (mimeType.startsWith('image/')) return 'image';
@@ -105,7 +104,7 @@ export function EvidenceSection({ project }: { project: Project }) {
 
         try {
             // 1. Upload file directly to Firebase Storage from the client
-            const fileId = randomUUID();
+            const fileId = self.crypto.randomUUID();
             const fileExtension = file.name.split('.').pop() || '';
             const filePath = `evidence/${user.uid}/${project.id}/${fileId}.${fileExtension}`;
             const storageRef = ref(storage, filePath);

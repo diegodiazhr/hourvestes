@@ -1,58 +1,49 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    function getRole() {
-        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
-    
-    function isStudent() {
-        return getRole() == 'Alumno';
-    }
 
-    function isTeacher() {
-        return getRole() == 'Profesor';
-    }
-
-    function isAdmin() {
-        return getRole() == 'Administrador';
-    }
-
-    // Allow users to read and write their own profile
+    // Users Collection
     match /users/{userId} {
-      allow read, create;
-      allow update: if isOwner(userId) || isAdmin();
-    }
-    
-    // School settings can be read by anyone, but only updated by assigned teachers or admins
-    match /schools/{schoolId} {
-        allow read;
-        allow write: if isTeacher() || isAdmin();
+      // Allow users to read their own profile
+      allow read: if request.auth != null;
+      // Allow users to create their own profile document
+      allow create: if request.auth.uid == userId;
+      // Allow users to update their own profile
+      allow update: if request.auth.uid == userId;
+      // Disallow deleting user profiles
+      allow delete: if false;
     }
 
-    // Projects can be created/read/updated by the student owner
-    // Teachers can read student projects
-    match /projects/{projectId} {
-      allow create, update: if isOwner(request.resource.data.userId);
-      allow read: if isOwner(resource.data.userId) || isTeacher() || isAdmin();
-      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    // Schools Collection
+    match /schools/{schoolId} {
+      // Anyone authenticated can read school settings
+      allow read: if request.auth != null;
+      // Only the designated admin teacher or a general admin can write/update school settings
+      allow write: if request.auth.uid == resource.data.adminTeacherId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador';
     }
-    
-    // Classes can be created/managed by teachers
-    // Students can only read classes they are a part of
+
+    // Projects Collection
+    match /projects/{projectId} {
+      // Allow read if user is the owner
+      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.teacherId == resource.data.userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador');
+      // Allow create if user is authenticated and the project belongs to them
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Allow update if the user is the owner
+      allow update: if request.auth.uid == resource.data.userId;
+      // Allow delete if user is the owner
+      allow delete: if request.auth.uid == resource.data.userId;
+    }
+
+    // Classes Collection
     match /classes/{classId} {
-        allow create: if isTeacher();
-        allow read: if isSignedIn();
-        allow update: if isTeacher() && resource.data.teacherId == request.auth.uid;
+      // Allow read for the teacher of the class or an admin
+      allow read: if request.auth != null;
+      // Allow teacher to create a class
+      allow create: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Profesor';
+      // Allow teacher to update their own class
+      allow update, delete: if request.auth.uid == resource.data.teacherId;
     }
   }
 }

@@ -32,7 +32,7 @@ export async function generateStudentReport(
   if (schoolInfo.logoUrl) {
     try {
       // This is a workaround to bypass CORS issues when loading images from GCS in jsPDF
-      const response = await fetch(`https://cors-anywhere.herokuapp.com/${schoolInfo.logoUrl}`);
+      const response = await fetch(schoolInfo.logoUrl);
       const blob = await response.blob();
       const dataUrl = await new Promise<string>(resolve => {
         const reader = new FileReader();
@@ -41,7 +41,7 @@ export async function generateStudentReport(
       });
       doc.addImage(dataUrl, 'PNG', 15, 12, 20, 20);
     } catch(e) {
-      console.error("Could not load school logo for PDF", e);
+      console.error("Could not load school logo for PDF due to CORS or other issue, proceeding without it.", e);
     }
   }
 
